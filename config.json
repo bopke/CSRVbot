@@ -1,0 +1,13 @@
+{
+  "mysql_port": 3306,
+  "mysql_user": "discord_bot",
+  "main_channel": "giveaway",
+  "blacklisted_role": "CraftserveBotBlacklisted",
+  "admin_role": "CraftserveBotAdmin",
+  "mysql_database": "discord_bot",
+  "mysql_password": "",
+  "mysql_host": "mysql.craftserve.pl",
+  "giveaway_time": "19:00",
+  "system_token": "token discordowy",
+  "csrv_secret": "secret api od kodow"
+}
