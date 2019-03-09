@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -14,6 +12,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/go-sql-driver/mysql"
 )
 
 type Giveaway struct {
