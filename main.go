@@ -211,10 +211,7 @@ func printGiveawayInfo(s *discordgo.Session, channelID *string, guildID *string)
 		"**Sponsorem tego bota jest https://craftserve.pl/ - hosting serwerów Minecraft.**\n\n" +
 		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
 		"Uczestnicy: "
-	for _, participant := range getParticipants(guildID) {
-		info += participant + ", "
-	}
-	info = info[:len(info)-2]
+	info += strings.Join(getParticipants(guildID), ", ")
 	info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
 	m, err := s.ChannelMessageSend(*channelID, info)
 	if err != nil {
