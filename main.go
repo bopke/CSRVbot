@@ -297,6 +297,8 @@ func main() {
 		panic(err)
 	}
 
+	discord.AddHandler(OnMessageCreate)
+	discord.AddHandler(OnMessageReactionAdd)
 	err = discord.Open()
 	if err != nil {
 		panic(err)
@@ -313,7 +315,7 @@ func main() {
 		panic(err)
 	}
 }
-func MessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	if !isThxMessage(&r.MessageID) {
 		return
 	}
@@ -331,7 +333,7 @@ func MessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	}
 }
 
-func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// ignore own messages
 	if m.Author.ID == s.State.User.ID {
