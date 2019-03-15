@@ -225,26 +225,6 @@ func blacklistUser(userID, guildID *string) {
 	return
 }
 
-func getCSRVCode() string {
-	return "TEST"
-}
-
-func printGiveawayInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
-	info := "**Ten bot organizuje giveaway kodów na serwery Diamond.**\n" +
-		"**Każdy kod przedłuża serwer o 7 dni.**\n" +
-		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
-		"**Sponsorem tego bota jest https://craftserve.pl/ - hosting serwerów Minecraft.**\n\n" +
-		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
-		"Uczestnicy: "
-	info += strings.Join(getParticipants(guildID), ", ")
-	info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
-	m, err := s.ChannelMessageSend(*channelID, info)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return m
-}
-
 //
 // roles utils
 //
@@ -304,6 +284,11 @@ func main() {
 		panic(err)
 	}
 }
+
+//
+// listeners
+//
+
 func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	if !isThxMessage(&r.MessageID) {
 		return
@@ -396,6 +381,10 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
+//
+// other
+//
+
 func printServerInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
 	embed := discordgo.MessageEmbed{}
 	embed.Author = &discordgo.MessageEmbedAuthor{
@@ -421,4 +410,24 @@ func printServerInfo(s *discordgo.Session, channelID *string, guildID *string) *
 		fmt.Println(err)
 	}
 	return msg
+}
+
+func printGiveawayInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
+	info := "**Ten bot organizuje giveaway kodów na serwery Diamond.**\n" +
+		"**Każdy kod przedłuża serwer o 7 dni.**\n" +
+		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
+		"**Sponsorem tego bota jest https://craftserve.pl/ - hosting serwerów Minecraft.**\n\n" +
+		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
+		"Uczestnicy: "
+	info += strings.Join(getParticipants(guildID), ", ")
+	info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
+	m, err := s.ChannelMessageSend(*channelID, info)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return m
+}
+
+func getCSRVCode() string {
+	return "TEST"
 }
