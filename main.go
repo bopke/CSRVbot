@@ -70,6 +70,10 @@ type Config struct {
 var config Config
 var waiter chan bool
 
+//
+// config stuff
+//
+
 func loadConfig() (c Config) {
 	configFile, err := ioutil.ReadFile("config.json")
 	print(string(configFile))
@@ -105,6 +109,10 @@ func loadConfig() (c Config) {
 	return
 }
 
+//
+// giveaway utils
+//
+
 func getNextGiveawayTime() time.Time {
 	now := time.Now()
 	if now.Hour() > config.GiveawayTimeH || (now.Hour() == config.GiveawayTimeH && now.Minute() >= config.GiveawayTimeM) {
@@ -120,67 +128,9 @@ func getNextGiveawayTime() time.Time {
 		now.Location())
 }
 
-func confirmParticipant(messageId, adminId *string) {
-	//TODO: PRZYTUL BAZE
-	return
-}
-
-func refuseParticipant(messageId, adminId *string) {
-	//TODO: PRZYTUL BAZE
-	return
-}
-
-func isThxMessage(messageID *string) bool {
-	//TODO: PRZYTUL BAZE
-	return true
-}
-
-func deleteFromGiveaway(userID, guildID *string) {
-	//TODO: PRZYTUL BAZE
-	return
-}
-
-func blacklistUser(userID, guildID *string) {
-	//TODO: PRZYTUL BAZE
-	return
-}
-
-func getRoleID(s *discordgo.Session, guildID *string, roleName string) (string, error) {
-	guild, err := s.Guild(*guildID)
-	if err != nil {
-		fmt.Println(err)
-		return "", errors.New("unable to retrieve guild")
-	}
-	roles := guild.Roles
-	for _, role := range roles {
-		if role.Name == roleName {
-			return role.ID, nil
-		}
-	}
-	return "", errors.New("no " + roleName + " role available")
-}
-
-func hasRole(s *discordgo.Session, member *discordgo.Member, roleName string) bool {
-	adminRole, err := getRoleID(s, &member.GuildID, roleName)
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
-	for _, role := range member.Roles {
-		if role == adminRole {
-			return true
-		}
-	}
-	return false
-}
-
 func getCurrentGiveawayTime() time.Time {
 	//TODO: przytul baze
 	return time.Now().Add(5 * time.Minute)
-}
-
-func getCSRVCode() string {
-	return "TEST"
 }
 
 func waitForGiveaway() {
@@ -202,22 +152,6 @@ func finishGiveaways() {
 func getParticipants(guildID *string) (participants []string) {
 	//TODO: przytul baze
 	return
-}
-
-func printGiveawayInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
-	info := "**Ten bot organizuje giveaway kodów na serwery Diamond.**\n" +
-		"**Każdy kod przedłuża serwer o 7 dni.**\n" +
-		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
-		"**Sponsorem tego bota jest https://craftserve.pl/ - hosting serwerów Minecraft.**\n\n" +
-		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
-		"Uczestnicy: "
-	info += strings.Join(getParticipants(guildID), ", ")
-	info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
-	m, err := s.ChannelMessageSend(*channelID, info)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return m
 }
 
 func notifyWinner(s *discordgo.Session, guildID *string, channelID *string, winnerID *string) {
@@ -262,31 +196,86 @@ func notifyWinner(s *discordgo.Session, guildID *string, channelID *string, winn
 	}
 }
 
-func printServerInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
-	embed := discordgo.MessageEmbed{}
-	embed.Author = &discordgo.MessageEmbedAuthor{
-		URL:     "https://craftserve.pl",
-		Name:    "Informacje o serwerze",
-		IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
+//
+// thx-command related utils
+//
+
+func confirmParticipant(messageId, adminId *string) {
+	//TODO: PRZYTUL BAZE
+	return
+}
+
+func refuseParticipant(messageId, adminId *string) {
+	//TODO: PRZYTUL BAZE
+	return
+}
+
+func isThxMessage(messageID *string) bool {
+	//TODO: PRZYTUL BAZE
+	return true
+}
+
+func deleteFromGiveaway(userID, guildID *string) {
+	//TODO: PRZYTUL BAZE
+	return
+}
+
+func blacklistUser(userID, guildID *string) {
+	//TODO: PRZYTUL BAZE
+	return
+}
+
+func getCSRVCode() string {
+	return "TEST"
+}
+
+func printGiveawayInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
+	info := "**Ten bot organizuje giveaway kodów na serwery Diamond.**\n" +
+		"**Każdy kod przedłuża serwer o 7 dni.**\n" +
+		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
+		"**Sponsorem tego bota jest https://craftserve.pl/ - hosting serwerów Minecraft.**\n\n" +
+		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
+		"Uczestnicy: "
+	info += strings.Join(getParticipants(guildID), ", ")
+	info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
+	m, err := s.ChannelMessageSend(*channelID, info)
+	if err != nil {
+		fmt.Println(err)
 	}
+	return m
+}
+
+//
+// roles utils
+//
+
+func getRoleID(s *discordgo.Session, guildID *string, roleName string) (string, error) {
 	guild, err := s.Guild(*guildID)
 	if err != nil {
 		fmt.Println(err)
+		return "", errors.New("unable to retrieve guild")
 	}
-	embed.Description = "ID:" + *guildID
-	//TODO: kolor embedu jakis sensowny
-	//	embed.Color
-	embed.Fields = []*discordgo.MessageEmbedField{}
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Region", Value: guild.Region})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Kanały", Value: string(len(guild.Channels)) + " kanałów"})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Użytkowników [" + string(guild.MemberCount) + "]"})
-	//TODO: czas!
-	//	embed.Fields = append(embed.Fields,&discordgo.MessageEmbedField{Name: "Data utworzenia",Value:time.Unix(guild.JoinedAt)})
-	msg, err := s.ChannelMessageSendEmbed(*channelID, &embed)
+	roles := guild.Roles
+	for _, role := range roles {
+		if role.Name == roleName {
+			return role.ID, nil
+		}
+	}
+	return "", errors.New("no " + roleName + " role available")
+}
+
+func hasRole(s *discordgo.Session, member *discordgo.Member, roleName string) bool {
+	adminRole, err := getRoleID(s, &member.GuildID, roleName)
 	if err != nil {
 		fmt.Println(err)
+		return false
 	}
-	return msg
+	for _, role := range member.Roles {
+		if role == adminRole {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
@@ -405,4 +394,31 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			blacklistUser(&cmds[2], &m.GuildID)
 		}
 	}
+}
+
+func printServerInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
+	embed := discordgo.MessageEmbed{}
+	embed.Author = &discordgo.MessageEmbedAuthor{
+		URL:     "https://craftserve.pl",
+		Name:    "Informacje o serwerze",
+		IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
+	}
+	guild, err := s.Guild(*guildID)
+	if err != nil {
+		fmt.Println(err)
+	}
+	embed.Description = "ID:" + *guildID
+	//TODO: kolor embedu jakis sensowny
+	//	embed.Color
+	embed.Fields = []*discordgo.MessageEmbedField{}
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Region", Value: guild.Region})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Kanały", Value: string(len(guild.Channels)) + " kanałów"})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Użytkowników [" + string(guild.MemberCount) + "]"})
+	//TODO: czas!
+	//	embed.Fields = append(embed.Fields,&discordgo.MessageEmbedField{Name: "Data utworzenia",Value:time.Unix(guild.JoinedAt)})
+	msg, err := s.ChannelMessageSendEmbed(*channelID, &embed)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return msg
 }
