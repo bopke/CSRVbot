@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"strconv"
@@ -32,14 +31,12 @@ type Config struct {
 var config Config
 
 func loadConfig() (c Config) {
-	configFile, err := ioutil.ReadFile("config.json")
+	configFile, err := os.Open("config.json")
 	if err != nil {
 		panic(err)
 	}
-	if len(configFile) < 1 {
-		panic("Empty config file")
-	}
-	err = json.Unmarshal(configFile, &c)
+	defer configFile.Close()
+	err = json.NewDecoder(configFile).Decode(&c)
 	if err != nil {
 		panic(err)
 	}
