@@ -375,6 +375,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 			if !isAdmin(s, &m.GuildID, member) {
 				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+				return
 			}
 			if len(cmds) == 2 {
 				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
