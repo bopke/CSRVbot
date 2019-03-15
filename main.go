@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,45 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/go-sql-driver/mysql"
 )
-
-type Giveaway struct {
-	Id            int            `db:"id, primarykey, autoincrement"`
-	StartTime     time.Time      `db:"start_time"`
-	EndTime       mysql.NullTime `db:"end_time"`
-	GuildId       string         `db:"guild_id,size:255"`
-	GuildName     string         `db:"guild_name,size:255"`
-	WinnerId      sql.NullString `db:"winner_id,size:255"`
-	WinnerName    sql.NullString `db:"winner_name,size:255"`
-	InfoMessageId sql.NullString `db:"info_message_id,size:255"`
-	Code          sql.NullString `db:"code,size:255"`
-}
-
-type Participant struct {
-	Id           int            `db:"id, primarykey, autoincrement"`
-	UserName     string         `db:"user_name,size:255"`
-	UserId       string         `db:"user_id,size:255"`
-	GiveawayId   int            `db:"giveaway_id"`
-	CreateTime   time.Time      `db:"create_time"`
-	GuildName    string         `db:"guild_name,size:255"`
-	GuildId      string         `db:"guild_id,size:255"`
-	MessageId    string         `db:"message_id,size:255"`
-	ChannelId    string         `db:"channel_id,size:255"`
-	AcceptTime   mysql.NullTime `db:"accept_time"`
-	AcceptUser   sql.NullString `db:"accept_user,size:255"`
-	AcceptUserId sql.NullString `db:"accept_user_id,size:255"`
-}
-
-type Blacklist struct {
-	Id            int    `db:"id,primarykey,autoincrement"`
-	GuildId       string `db:"guild_id,size:255"`
-	UserId        string `db:"user_id,size:255"`
-	BlacklisterId string `db:"blacklister_id,size:255"`
-}
 
 type Config struct {
 	MysqlPort       int    `json:"mysql_port"`
@@ -68,13 +31,8 @@ type Config struct {
 
 var config Config
 
-//
-// config stuff
-//
-
 func loadConfig() (c Config) {
 	configFile, err := ioutil.ReadFile("config.json")
-	print(string(configFile))
 	if err != nil {
 		panic(err)
 	}
@@ -107,12 +65,9 @@ func loadConfig() (c Config) {
 	return
 }
 
-//
-// giveaway utils
-//
-
 func main() {
 	config = loadConfig()
+	InitDB()
 	forceStart = make(chan string, 1)
 	discord, err := discordgo.New("Bot " + config.SystemToken)
 	if err != nil {
@@ -137,10 +92,6 @@ func main() {
 		panic(err)
 	}
 }
-
-//
-// other
-//
 
 func printServerInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
 	embed := discordgo.MessageEmbed{}
