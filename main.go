@@ -145,7 +145,7 @@ func blacklistUser(userID, guildID *string) {
 	return
 }
 
-func getAdminRoleID(s *discordgo.Session, guildID *string) (string, error) {
+func getRoleID(s *discordgo.Session, guildID *string, roleName string) (string, error) {
 	guild, err := s.Guild(*guildID)
 	if err != nil {
 		fmt.Println(err)
@@ -153,15 +153,15 @@ func getAdminRoleID(s *discordgo.Session, guildID *string) (string, error) {
 	}
 	roles := guild.Roles
 	for _, role := range roles {
-		if role.Name == config.AdminRole {
+		if role.Name == roleName {
 			return role.ID, nil
 		}
 	}
-	return "", errors.New("no admin role available")
+	return "", errors.New("no " + roleName + " role available")
 }
 
-func isAdmin(s *discordgo.Session, guildID *string, member *discordgo.Member) bool {
-	adminRole, err := getAdminRoleID(s, guildID)
+func hasRole(s *discordgo.Session, member *discordgo.Member, roleName string) bool {
+	adminRole, err := getRoleID(s, &member.GuildID, roleName)
 	if err != nil {
 		fmt.Println(err)
 		return false
@@ -323,7 +323,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		return
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
-	if isAdmin(s, &r.GuildID, member) {
+	if hasRole(s, member, config.AdminRole) {
 		//TODO: TAK NIE
 		if r.Emoji.Name == "tak" {
 			confirmParticipant(&r.MessageID, &r.UserID)
@@ -373,7 +373,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				fmt.Println(err)
 				return
 			}
-			if !isAdmin(s, &m.GuildID, member) {
+			if !hasRole(s, member, config.AdminRole) {
 				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 				return
 			}
@@ -392,7 +392,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				fmt.Println(err)
 				return
 			}
-			if !isAdmin(s, &m.GuildID, member) {
+			if !hasRole(s, member, config.AdminRole) {
 				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 			}
 			if len(cmds) == 2 {
