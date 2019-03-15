@@ -174,7 +174,7 @@ func isAdmin(s *discordgo.Session, guildID *string, member *discordgo.Member) bo
 	return false
 }
 
-func getActualGiveawayTime() time.Time {
+func getCurrentGiveawayTime() time.Time {
 	//TODO: przytul baze
 	return time.Now().Add(5 * time.Minute)
 }
@@ -184,7 +184,7 @@ func getCSRVCode() string {
 }
 
 func waitForGiveaway() {
-	giveawayTime := getActualGiveawayTime()
+	giveawayTime := getCurrentGiveawayTime()
 	select {
 	case <-waiter:
 	case <-time.After(time.Until(giveawayTime)):
