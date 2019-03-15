@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -68,7 +67,6 @@ type Config struct {
 }
 
 var config Config
-var waiter chan bool
 
 //
 // config stuff
@@ -113,154 +111,9 @@ func loadConfig() (c Config) {
 // giveaway utils
 //
 
-func getNextGiveawayTime() time.Time {
-	now := time.Now()
-	if now.Hour() > config.GiveawayTimeH || (now.Hour() == config.GiveawayTimeH && now.Minute() >= config.GiveawayTimeM) {
-		now = now.Add(24 * time.Hour)
-	}
-	return time.Date(now.Year(),
-		now.Month(),
-		now.Day(),
-		config.GiveawayTimeH,
-		config.GiveawayTimeM,
-		0,
-		0,
-		now.Location())
-}
-
-func getCurrentGiveawayTime() time.Time {
-	//TODO: przytul baze
-	return time.Now().Add(5 * time.Minute)
-}
-
-func waitForGiveaway() {
-	giveawayTime := getCurrentGiveawayTime()
-	select {
-	case <-waiter:
-	case <-time.After(time.Until(giveawayTime)):
-	}
-	finishGiveaways()
-}
-
-func finishGiveaways() {
-	//TODO: przytul baze ogłoś wygranko
-	// notifyWinner()
-	// printGiveawayInfo()
-	return
-}
-
-func getParticipants(guildID *string) (participants []string) {
-	//TODO: przytul baze
-	return
-}
-
-func notifyWinner(s *discordgo.Session, guildID *string, channelID *string, winnerID *string) {
-
-	if winnerID == nil {
-		_, err := s.ChannelMessageSend(*channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-	embed := discordgo.MessageEmbed{}
-	embed.Author = &discordgo.MessageEmbedAuthor{
-		URL:     "https://craftserve.pl",
-		Name:    "Wygrałeś kod na serwer diamond!",
-		IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
-	}
-	embed.Description = "Gratulacje! W loterii wygrałeś darmowy kod na serwer w CraftServe!"
-	embed.Fields = []*discordgo.MessageEmbedField{}
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: getCSRVCode()})
-	winner, err := s.GuildMember(*guildID, *winnerID)
-	if err != nil {
-		fmt.Println(err)
-	}
-	dm, err := s.UserChannelCreate(*winnerID)
-	if err != nil {
-		fmt.Println(err)
-	}
-	_, err = s.ChannelMessageSendEmbed(dm.ID, &embed)
-	if err != nil {
-		fmt.Println(err)
-	}
-	embed = discordgo.MessageEmbed{}
-	embed.Author = &discordgo.MessageEmbedAuthor{
-		URL:     "https://craftserve.pl",
-		Name:    "Wyniki giveaway!",
-		IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
-	}
-	embed.Description = winner.User.Username + " wygrał kod. Moje gratulacje ;)"
-	_, err = s.ChannelMessageSendEmbed(*channelID, &embed)
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-//
-// thx-command related utils
-//
-
-func confirmParticipant(messageId, adminId *string) {
-	//TODO: PRZYTUL BAZE
-	return
-}
-
-func refuseParticipant(messageId, adminId *string) {
-	//TODO: PRZYTUL BAZE
-	return
-}
-
-func isThxMessage(messageID *string) bool {
-	//TODO: PRZYTUL BAZE
-	return true
-}
-
-func deleteFromGiveaway(userID, guildID *string) {
-	//TODO: PRZYTUL BAZE
-	return
-}
-
-func blacklistUser(userID, guildID *string) {
-	//TODO: PRZYTUL BAZE
-	return
-}
-
-//
-// roles utils
-//
-
-func getRoleID(s *discordgo.Session, guildID *string, roleName string) (string, error) {
-	guild, err := s.Guild(*guildID)
-	if err != nil {
-		fmt.Println(err)
-		return "", errors.New("unable to retrieve guild")
-	}
-	roles := guild.Roles
-	for _, role := range roles {
-		if role.Name == roleName {
-			return role.ID, nil
-		}
-	}
-	return "", errors.New("no " + roleName + " role available")
-}
-
-func hasRole(s *discordgo.Session, member *discordgo.Member, roleName string) bool {
-	adminRole, err := getRoleID(s, &member.GuildID, roleName)
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
-	for _, role := range member.Roles {
-		if role == adminRole {
-			return true
-		}
-	}
-	return false
-}
-
 func main() {
 	config = loadConfig()
-	waiter = make(chan bool, 1)
+	forceStart = make(chan string, 1)
 	discord, err := discordgo.New("Bot " + config.SystemToken)
 	if err != nil {
 		panic(err)
@@ -282,102 +135,6 @@ func main() {
 	err = discord.Close()
 	if err != nil {
 		panic(err)
-	}
-}
-
-//
-// listeners
-//
-
-func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	if !isThxMessage(&r.MessageID) {
-		return
-	}
-	if r.UserID == s.State.User.ID {
-		return
-	}
-	member, _ := s.GuildMember(r.GuildID, r.UserID)
-	if hasRole(s, member, config.AdminRole) {
-		//TODO: TAK NIE
-		if r.Emoji.Name == "tak" {
-			confirmParticipant(&r.MessageID, &r.UserID)
-		} else if r.Emoji.Name == "nie" {
-			refuseParticipant(&r.MessageID, &r.UserID)
-		}
-	}
-}
-
-func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	// ignore own messages
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// ignore other bots messages
-	if m.Author.Bot {
-		return
-	}
-
-	if !strings.HasPrefix(m.Content, "!") {
-		return
-	}
-
-	// remove prefix
-	m.Content = m.Content[1:]
-	cmds := strings.Fields(m.Content)
-	if cmds[0] == "giveaway" {
-		printGiveawayInfo(s, &m.ChannelID, &m.GuildID)
-		return
-	}
-	if cmds[0] == "csrvbot" {
-		_, err := s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|info>")
-		if err != nil {
-			fmt.Println(err)
-		}
-		if cmds[1] == "info" {
-			return
-		}
-		if cmds[1] == "start" {
-			waiter <- true
-			return
-		}
-		if cmds[1] == "delete" {
-			member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			if !hasRole(s, member, config.AdminRole) {
-				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
-				return
-			}
-			if len(cmds) == 2 {
-				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
-				if err != nil {
-					fmt.Println(err)
-				}
-				return
-			}
-			deleteFromGiveaway(&cmds[2], &m.GuildID)
-		}
-		if cmds[1] == "blacklist" {
-			member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			if !hasRole(s, member, config.AdminRole) {
-				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
-			}
-			if len(cmds) == 2 {
-				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
-				if err != nil {
-					fmt.Println(err)
-				}
-				return
-			}
-			blacklistUser(&cmds[2], &m.GuildID)
-		}
 	}
 }
 
