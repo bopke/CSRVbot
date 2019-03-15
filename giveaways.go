@@ -58,13 +58,14 @@ func notifyWinner(s *discordgo.Session, guildID *string, channelID *string, winn
 			fmt.Println(err)
 		}
 	}
-	embed := discordgo.MessageEmbed{}
-	embed.Author = &discordgo.MessageEmbedAuthor{
-		URL:     "https://craftserve.pl",
-		Name:    "Wygrałeś kod na serwer diamond!",
-		IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
+	embed := discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://craftserve.pl",
+			Name:    "Wygrałeś kod na serwer diamond!",
+			IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
+		},
+		Description: "Gratulacje! W loterii wygrałeś darmowy kod na serwer w CraftServe!",
 	}
-	embed.Description = "Gratulacje! W loterii wygrałeś darmowy kod na serwer w CraftServe!"
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: getCSRVCode()})
 	winner, err := s.GuildMember(*guildID, *winnerID)
@@ -79,13 +80,14 @@ func notifyWinner(s *discordgo.Session, guildID *string, channelID *string, winn
 	if err != nil {
 		fmt.Println(err)
 	}
-	embed = discordgo.MessageEmbed{}
-	embed.Author = &discordgo.MessageEmbedAuthor{
-		URL:     "https://craftserve.pl",
-		Name:    "Wyniki giveaway!",
-		IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
+	embed = discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://craftserve.pl",
+			Name:    "Wyniki giveaway!",
+			IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
+		},
+		Description: winner.User.Username + " wygrał kod. Moje gratulacje ;)",
 	}
-	embed.Description = winner.User.Username + " wygrał kod. Moje gratulacje ;)"
 	_, err = s.ChannelMessageSendEmbed(*channelID, &embed)
 	if err != nil {
 		fmt.Println(err)
