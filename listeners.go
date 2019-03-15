@@ -53,6 +53,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmt.Println(err)
 		}
 		if cmds[1] == "info" {
+			printServerInfo(s, &m.ChannelID, &m.GuildID)
 			return
 		}
 		if cmds[1] == "start" {
