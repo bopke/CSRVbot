@@ -7,7 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var forceStart chan string
+var forceStart chan int
 
 func getNextGiveawayTime() time.Time {
 	now := time.Now()
@@ -29,13 +29,18 @@ func getCurrentGiveawayTime() time.Time {
 	return time.Now().Add(5 * time.Minute)
 }
 
-func waitForGiveaway() {
+func waitForGiveaway( /*giveawayID int*/ ) {
 	giveawayTime := getCurrentGiveawayTime()
 	select {
-	case <-forceStart:
+	//	case x := <-forceStart:
+
 	case <-time.After(time.Until(giveawayTime)):
 	}
 	finishGiveaways()
+}
+
+func waitForGiveaways() {
+	return
 }
 
 func finishGiveaways() {
@@ -50,10 +55,10 @@ func getParticipants(guildID *string) (participants []string) {
 	return
 }
 
-func notifyWinner(s *discordgo.Session, guildID *string, channelID *string, winnerID *string) {
+func notifyWinner(guildID *string, channelID *string, winnerID *string) {
 
 	if winnerID == nil {
-		_, err := s.ChannelMessageSend(*channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
+		_, err := session.ChannelMessageSend(*channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -68,15 +73,15 @@ func notifyWinner(s *discordgo.Session, guildID *string, channelID *string, winn
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: getCSRVCode()})
-	winner, err := s.GuildMember(*guildID, *winnerID)
+	winner, err := session.GuildMember(*guildID, *winnerID)
 	if err != nil {
 		fmt.Println(err)
 	}
-	dm, err := s.UserChannelCreate(*winnerID)
+	dm, err := session.UserChannelCreate(*winnerID)
 	if err != nil {
 		fmt.Println(err)
 	}
-	_, err = s.ChannelMessageSendEmbed(dm.ID, &embed)
+	_, err = session.ChannelMessageSendEmbed(dm.ID, &embed)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -88,7 +93,7 @@ func notifyWinner(s *discordgo.Session, guildID *string, channelID *string, winn
 		},
 		Description: winner.User.Username + " wygrał kod. Moje gratulacje ;)",
 	}
-	_, err = s.ChannelMessageSendEmbed(*channelID, &embed)
+	_, err = session.ChannelMessageSendEmbed(*channelID, &embed)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -102,4 +107,9 @@ func deleteFromGiveaway(userID, guildID *string) {
 func blacklistUser(userID, guildID *string) {
 	//TODO: PRZYTUL BAZE
 	return
+}
+
+func isBlacklisted(userID, guildID *string) bool {
+	//TODO: PRZYTUL BAZE
+	return true
 }

@@ -15,7 +15,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		return
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
-	if hasRole(s, member, config.AdminRole) {
+	if hasRole(member, config.AdminRole) {
 		//TODO: TAK NIE
 		if r.Emoji.Name == "tak" {
 			confirmParticipant(&r.MessageID, &r.UserID)
@@ -44,7 +44,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	m.Content = m.Content[1:]
 	cmds := strings.Fields(m.Content)
 	if cmds[0] == "giveaway" {
-		printGiveawayInfo(s, &m.ChannelID, &m.GuildID)
+		printGiveawayInfo(&m.ChannelID, &m.GuildID)
 		return
 	}
 	if cmds[0] == "csrvbot" {
@@ -53,11 +53,11 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmt.Println(err)
 		}
 		if cmds[1] == "info" {
-			printServerInfo(s, &m.ChannelID, &m.GuildID)
+			printServerInfo(&m.ChannelID, &m.GuildID)
 			return
 		}
 		if cmds[1] == "start" {
-			forceStart <- m.GuildID
+			//			forceStart <- m.GuildID
 			return
 		}
 		if cmds[1] == "delete" {
@@ -66,7 +66,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				fmt.Println(err)
 				return
 			}
-			if !hasRole(s, member, config.AdminRole) {
+			if !hasRole(member, config.AdminRole) {
 				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 				return
 			}
@@ -85,7 +85,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				fmt.Println(err)
 				return
 			}
-			if !hasRole(s, member, config.AdminRole) {
+			if !hasRole(member, config.AdminRole) {
 				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 			}
 			if len(cmds) == 2 {

@@ -30,6 +30,8 @@ type Config struct {
 
 var config Config
 
+var session discordgo.Session
+
 func loadConfig() (c Config) {
 	configFile, err := os.Open("config.json")
 	if err != nil {
@@ -65,15 +67,15 @@ func loadConfig() (c Config) {
 func main() {
 	config = loadConfig()
 	InitDB()
-	forceStart = make(chan string, 1)
-	discord, err := discordgo.New("Bot " + config.SystemToken)
+	forceStart = make(chan int, 1)
+	session, err := discordgo.New("Bot " + config.SystemToken)
 	if err != nil {
 		panic(err)
 	}
 
-	discord.AddHandler(OnMessageCreate)
-	discord.AddHandler(OnMessageReactionAdd)
-	err = discord.Open()
+	session.AddHandler(OnMessageCreate)
+	session.AddHandler(OnMessageReactionAdd)
+	err = session.Open()
 	if err != nil {
 		panic(err)
 	}
@@ -84,20 +86,20 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	err = discord.Close()
+	err = session.Close()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func printServerInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
+func printServerInfo(channelID *string, guildID *string) *discordgo.Message {
 	embed := discordgo.MessageEmbed{}
 	embed.Author = &discordgo.MessageEmbedAuthor{
 		URL:     "https://craftserve.pl",
 		Name:    "Informacje o serwerze",
 		IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
 	}
-	guild, err := s.Guild(*guildID)
+	guild, err := session.Guild(*guildID)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -110,14 +112,14 @@ func printServerInfo(s *discordgo.Session, channelID *string, guildID *string) *
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Użytkowników [" + string(guild.MemberCount) + "]"})
 	//TODO: czas!
 	//	embed.Fields = append(embed.Fields,&discordgo.MessageEmbedField{Name: "Data utworzenia",Value:time.Unix(guild.JoinedAt)})
-	msg, err := s.ChannelMessageSendEmbed(*channelID, &embed)
+	msg, err := session.ChannelMessageSendEmbed(*channelID, &embed)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return msg
 }
 
-func printGiveawayInfo(s *discordgo.Session, channelID *string, guildID *string) *discordgo.Message {
+func printGiveawayInfo(channelID *string, guildID *string) *discordgo.Message {
 	info := "**Ten bot organizuje giveaway kodów na serwery Diamond.**\n" +
 		"**Każdy kod przedłuża serwer o 7 dni.**\n" +
 		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
@@ -126,7 +128,7 @@ func printGiveawayInfo(s *discordgo.Session, channelID *string, guildID *string)
 		"Uczestnicy: "
 	info += strings.Join(getParticipants(guildID), ", ")
 	info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
-	m, err := s.ChannelMessageSend(*channelID, info)
+	m, err := session.ChannelMessageSend(*channelID, info)
 	if err != nil {
 		fmt.Println(err)
 	}
