@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -45,11 +46,11 @@ type Blacklist struct {
 var DbMap gorp.DbMap
 
 func InitDB() {
-	db, err := sql.Open("mymysql", "tcp:"+config.MysqlHost+":"+string(config.MysqlPort)+"*"+config.MysqlDatabase+"/"+config.MysqlUser+"/"+config.MysqlPassword)
+	db, err := sql.Open("mysql", config.MysqlUser+":"+config.MysqlPassword+"@tcp("+config.MysqlHost+":"+fmt.Sprint(config.MysqlPort)+")/"+config.MysqlDatabase)
 	if err != nil {
-		panic("MySQL connection failed!")
+		panic(err)
 	}
-	DbMap = gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{}}
+	DbMap = gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{"InnoDB", "UTF8MB4"}}
 
 	DbMap.AddTableWithName(Giveaway{}, "Giveaways").SetKeys(true, "id")
 	DbMap.AddTableWithName(Participant{}, "Participants").SetKeys(true, "id")
@@ -57,6 +58,6 @@ func InitDB() {
 
 	err = DbMap.CreateTablesIfNotExists()
 	if err != nil {
-		panic("Unable to create tables!")
+		panic(err)
 	}
 }
