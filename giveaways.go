@@ -24,35 +24,83 @@ func getNextGiveawayTime() time.Time {
 		now.Location())
 }
 
-func getCurrentGiveawayTime() time.Time {
-	//TODO: przytul baze
-	return time.Now().Add(5 * time.Minute)
+func getCurrentGiveawayTime(giveawayId int) time.Time {
+	giveaway := Giveaway{}
+	err := DbMap.SelectOne(&giveaway, "SELECT start_time FROM giveaways WHERE GiveawayId = ?", giveawayId)
+	if err != nil {
+		fmt.Println(err)
+		// TODO: z rozumkiem to jakoś zrobić
+		return time.Now().Add(24 * time.Hour)
+	}
+	return giveaway.StartTime.Add(24 * time.Hour)
 }
 
-func waitForGiveaway( /*giveawayID int*/ ) {
-	giveawayTime := getCurrentGiveawayTime()
+func waitForGiveaway(giveawayID int) {
+	giveawayTime := getCurrentGiveawayTime(giveawayID)
+thatwasntme:
 	select {
-	//	case x := <-forceStart:
-
+	case x := <-forceStart:
+		if x != giveawayID {
+			goto thatwasntme
+		}
 	case <-time.After(time.Until(giveawayTime)):
 	}
-	finishGiveaways()
+	finishGiveaway(giveawayID)
+}
+
+func getAllUnfinishedGiveaways() []Giveaway {
+	var res []Giveaway
+	_, err := DbMap.Select(&res, "SELECT * FROM giveaways WHERE EndTime IS NULL")
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return res
 }
 
 func waitForGiveaways() {
 	return
 }
 
-func finishGiveaways() {
-	//TODO: przytul baze ogłoś wygranko
+func finishGiveaway(giveawayId int) {
+	var giveaway Giveaway
+	err := DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE giveawayId = ?", giveawayId)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	participants, err := getParticipants(giveawayId)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if len(participants) == 0 {
+		guild, err := session.Guild(giveaway.GuildId)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		for i := range guild.Channels {
+			if guild.Channels[i].Name == config.MainChannel {
+				_, err := session.ChannelMessageSend(guild.Channels[i].ID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
+				if err != nil {
+
+				}
+			}
+		}
+	}
 	// notifyWinner()
 	// printGiveawayInfo()
 	return
 }
 
-func getParticipants(guildID *string) (participants []string) {
-	//TODO: przytul baze
-	return
+func getParticipants(giveawayId int) ([]Participant, error) {
+	var res []Participant
+	_, err := DbMap.Select(&res, "SELECT * FROM Participants WHERE giveawayId = ?", giveawayId)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func notifyWinner(guildID *string, channelID *string, winnerID *string) {
