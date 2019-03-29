@@ -8,6 +8,8 @@ import (
 )
 
 func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+	// bez tego sie wywala, a nie chce mi sie teraz przepisywac wszystkiego żeby przyjmowało przez argument.
+	session = *s
 	if !isThxMessage(&r.MessageID) {
 		return
 	}
@@ -26,7 +28,8 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 }
 
 func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
+	// bez tego sie wywala, a nie chce mi sie teraz przepisywac wszystkiego żeby przyjmowało przez argument.
+	session = *s
 	// ignore own messages
 	if m.Author.ID == s.State.User.ID {
 		return

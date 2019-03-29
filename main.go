@@ -57,10 +57,6 @@ func loadConfig() (c Config) {
 	if m > 59 || m < 0 {
 		panic("Minutes must be greater or equal 0 and less than 60!")
 	}
-
-	if err != nil {
-		panic(err)
-	}
 	return
 }
 
@@ -80,12 +76,11 @@ func main() {
 		panic(err)
 	}
 
-	go waitForGiveaway()
+	go waitForGiveaways()
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
-
 	err = session.Close()
 	if err != nil {
 		panic(err)
@@ -124,10 +119,19 @@ func printGiveawayInfo(channelID *string, guildID *string) *discordgo.Message {
 		"**Każdy kod przedłuża serwer o 7 dni.**\n" +
 		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
 		"**Sponsorem tego bota jest https://craftserve.pl/ - hosting serwerów Minecraft.**\n\n" +
-		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
-		"Uczestnicy: "
-	info += strings.Join(getParticipants(guildID), ", ")
-	info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
+		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n"
+	participants, err := getParticipantsNames(getGiveawayForGuild(guildID).Id)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	if participants != nil {
+		info += "Uczestnicy: "
+		info += strings.Join(participants, ", ")
+		info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
+	} else {
+
+	}
 	m, err := session.ChannelMessageSend(*channelID, info)
 	if err != nil {
 		fmt.Println(err)

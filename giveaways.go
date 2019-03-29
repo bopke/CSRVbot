@@ -25,7 +25,7 @@ func getNextGiveawayTime() time.Time {
 }
 
 func getCurrentGiveawayTime(giveawayId int) time.Time {
-	giveaway := Giveaway{}
+	var giveaway Giveaway
 	err := DbMap.SelectOne(&giveaway, "SELECT start_time FROM giveaways WHERE GiveawayId = ?", giveawayId)
 	if err != nil {
 		fmt.Println(err)
@@ -33,6 +33,17 @@ func getCurrentGiveawayTime(giveawayId int) time.Time {
 		return time.Now().Add(24 * time.Hour)
 	}
 	return giveaway.StartTime.Add(24 * time.Hour)
+}
+
+func getGiveawayForGuild(guildId *string) *Giveaway {
+	var giveaway Giveaway
+	err := DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guildId = ? AND EndTime IS NULL", *guildId)
+	if err != nil {
+		fmt.Println(err)
+		// TODO: z rozumkiem to jakoś zrobić
+		return nil
+	}
+	return &giveaway
 }
 
 func waitForGiveaway(giveawayID int) {
@@ -101,6 +112,19 @@ func getParticipants(giveawayId int) ([]Participant, error) {
 		return nil, err
 	}
 	return res, nil
+}
+
+func getParticipantsNames(giveawayId int) ([]string, error) {
+	var participants []Participant
+	_, err := DbMap.Select(&participants, "SELECT UserName FROM Participants WHERE giveawayId = ?", giveawayId)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, len(participants))
+	for i := range participants {
+		names[i] = participants[i].UserName
+	}
+	return names, nil
 }
 
 func notifyWinner(guildID *string, channelID *string, winnerID *string) {
