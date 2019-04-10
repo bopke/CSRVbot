@@ -30,7 +30,7 @@ type Config struct {
 
 var config Config
 
-var session discordgo.Session
+var session *discordgo.Session
 
 func loadConfig() (c Config) {
 	configFile, err := os.Open("config.json")
@@ -63,8 +63,8 @@ func loadConfig() (c Config) {
 func main() {
 	config = loadConfig()
 	InitDB()
-	forceStart = make(chan int, 1)
-	session, err := discordgo.New("Bot " + config.SystemToken)
+	var err error
+	session, err = discordgo.New("Bot " + config.SystemToken)
 	if err != nil {
 		panic(err)
 	}
@@ -120,19 +120,19 @@ func printGiveawayInfo(channelID *string, guildID *string) *discordgo.Message {
 		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
 		"**Sponsorem tego bota jest https://craftserve.pl/ - hosting serwerów Minecraft.**\n\n" +
 		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n"
-	participants, err := getParticipantsNames(getGiveawayForGuild(guildID).Id)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	if participants != nil {
-		info += "Uczestnicy: "
-		info += strings.Join(participants, ", ")
-		info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
-	} else {
+		/*	participants, err := getParticipantsNames(getGiveawayForGuild(guildID).Id)
+			if err != nil {
+				fmt.Println(err)
+				return nil
+			}
+			if participants != nil {
+				info += "Uczestnicy: "
+				info += strings.Join(participants, ", ")
+				info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
+			} else {
 
-	}
-	m, err := session.ChannelMessageSend(*channelID, info)
+			}
+		*/m, err := session.ChannelMessageSend(*channelID, info)
 	if err != nil {
 		fmt.Println(err)
 	}
