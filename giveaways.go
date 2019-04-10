@@ -7,7 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var forceStart chan int
+var forceStart = make(chan int, 1)
 
 func getNextGiveawayTime() time.Time {
 	now := time.Now()
