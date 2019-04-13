@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -16,10 +17,9 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
 	if hasRole(member, config.AdminRole) {
-		//TODO: TAK NIE
-		if r.Emoji.Name == "tak" {
+		if r.Emoji.Name == "thumbsup" {
 			confirmParticipant(&r.MessageID, &r.UserID)
-		} else if r.Emoji.Name == "nie" {
+		} else if r.Emoji.Name == "thumbsdown" {
 			refuseParticipant(&r.MessageID, &r.UserID)
 		}
 	}
@@ -41,25 +41,40 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// remove prefix
 	m.Content = m.Content[1:]
-	cmds := strings.Fields(m.Content)
-	if cmds[0] == "giveaway" {
+
+	args := strings.Fields(m.Content)
+	if args[0] == "thx" {
+		if len(args) != 2 {
+			printGiveawayInfo(&m.ChannelID, &m.GuildID)
+			return
+		}
+		match, _ := regexp.Match("<@[!]?[0-9]*>", []byte(args[1]))
+		if !match {
+			printGiveawayInfo(&m.ChannelID, &m.GuildID)
+			return
+		}
+
+		fmt.Print(m.Content)
+		return
+	}
+	if args[0] == "giveaway" {
 		printGiveawayInfo(&m.ChannelID, &m.GuildID)
 		return
 	}
-	if cmds[0] == "csrvbot" {
+	if args[0] == "csrvbot" {
 		_, err := s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|info>")
 		if err != nil {
 			fmt.Println(err)
 		}
-		if cmds[1] == "info" {
+		if args[1] == "info" {
 			printServerInfo(&m.ChannelID, &m.GuildID)
 			return
 		}
-		if cmds[1] == "start" {
+		if args[1] == "start" {
 			//			forceStart <- m.GuildID
 			return
 		}
-		if cmds[1] == "delete" {
+		if args[1] == "delete" {
 			member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 			if err != nil {
 				fmt.Println(err)
@@ -69,16 +84,16 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 				return
 			}
-			if len(cmds) == 2 {
+			if len(args) == 2 {
 				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
 				if err != nil {
 					fmt.Println(err)
 				}
 				return
 			}
-			deleteFromGiveaway(&cmds[2], &m.GuildID)
+			deleteFromGiveaway(&args[2], &m.GuildID)
 		}
-		if cmds[1] == "blacklist" {
+		if args[1] == "blacklist" {
 			member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 			if err != nil {
 				fmt.Println(err)
@@ -87,14 +102,14 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if !hasRole(member, config.AdminRole) {
 				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 			}
-			if len(cmds) == 2 {
+			if len(args) == 2 {
 				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
 				if err != nil {
 					fmt.Println(err)
 				}
 				return
 			}
-			blacklistUser(&cmds[2], &m.GuildID)
+			blacklistUser(&args[2], &m.GuildID)
 		}
 	}
 }

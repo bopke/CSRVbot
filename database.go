@@ -22,18 +22,19 @@ type Giveaway struct {
 }
 
 type Participant struct {
-	Id           int            `db:"id, primarykey, autoincrement"`
-	UserName     string         `db:"user_name,size:255"`
-	UserId       string         `db:"user_id,size:255"`
-	GiveawayId   int            `db:"giveaway_id"`
-	CreateTime   time.Time      `db:"create_time"`
-	GuildName    string         `db:"guild_name,size:255"`
-	GuildId      string         `db:"guild_id,size:255"`
-	MessageId    string         `db:"message_id,size:255"`
-	ChannelId    string         `db:"channel_id,size:255"`
-	AcceptTime   mysql.NullTime `db:"accept_time"`
-	AcceptUser   sql.NullString `db:"accept_user,size:255"`
-	AcceptUserId sql.NullString `db:"accept_user_id,size:255"`
+	Id                int            `db:"id, primarykey, autoincrement"`
+	UserName          string         `db:"user_name,size:255"`
+	UserId            string         `db:"user_id,size:255"`
+	GiveawayId        int            `db:"giveaway_id"`
+	CreateTime        time.Time      `db:"create_time"`
+	GuildName         string         `db:"guild_name,size:255"`
+	GuildId           string         `db:"guild_id,size:255"`
+	MessageId         string         `db:"message_id,size:255"`
+	ChannelId         string         `db:"channel_id,size:255"`
+	AcceptRefuseState sql.NullBool   `db:"accept_refuse_state"`
+	AcceptTime        mysql.NullTime `db:"accept_time"`
+	AcceptUser        sql.NullString `db:"accept_user,size:255"`
+	AcceptUserId      sql.NullString `db:"accept_user_id,size:255"`
 }
 
 type Blacklist struct {
