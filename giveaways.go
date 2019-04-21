@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -127,6 +128,15 @@ func getParticipantsNames(giveawayId int) ([]string, error) {
 	return names, nil
 }
 
+func getParticipantsNamesString(giveawayId int) string {
+	participants, err := getParticipantsNames(giveawayId)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return strings.Join(participants, ", ")
+}
+
 func notifyWinner(guildID *string, channelID *string, winnerID *string) {
 
 	if winnerID == nil {
@@ -134,6 +144,7 @@ func notifyWinner(guildID *string, channelID *string, winnerID *string) {
 		if err != nil {
 			fmt.Println(err)
 		}
+		return
 	}
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
