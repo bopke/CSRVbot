@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -17,11 +18,16 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
 	if hasRole(member, config.AdminRole) {
+		participant := getParticipantByUserId(r.UserID)
+		participant.AcceptTime.Time = time.Now()
+		participant.AcceptUser.String = member.User.Username
+		participant.AcceptUserId.String = r.UserID
 		if r.Emoji.Name == "thumbsup" {
-			confirmParticipant(&r.MessageID, &r.UserID)
+			participant.IsAccepted.Bool = true
 		} else if r.Emoji.Name == "thumbsdown" {
-			refuseParticipant(&r.MessageID, &r.UserID)
+			participant.IsAccepted.Bool = false
 		}
+		participant.update()
 	}
 }
 
