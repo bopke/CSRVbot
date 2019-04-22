@@ -108,7 +108,7 @@ func finishGiveaway(giveawayId int) {
 
 func getParticipants(giveawayId int) ([]Participant, error) {
 	var res []Participant
-	_, err := DbMap.Select(&res, "SELECT * FROM Participants WHERE giveawayId = ?", giveawayId)
+	_, err := DbMap.Select(&res, "SELECT * FROM Participants WHERE giveawayId = ? AND is_accepted = true", giveawayId)
 	if err != nil {
 		return nil, err
 	}
