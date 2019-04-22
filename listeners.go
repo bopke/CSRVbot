@@ -10,7 +10,7 @@ import (
 )
 
 func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	if !isThxMessage(&r.MessageID) {
+	if !isThxMessage(r.MessageID) {
 		return
 	}
 	if r.UserID == s.State.User.ID {
