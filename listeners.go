@@ -18,7 +18,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
 	if hasRole(member, config.AdminRole) {
-		participant := getParticipantByUserId(r.UserID)
+		participant := getParticipantByMessageId(r.MessageID)
 		participant.AcceptTime.Time = time.Now()
 		participant.AcceptUser.String = member.User.Username
 		participant.AcceptUserId.String = r.UserID

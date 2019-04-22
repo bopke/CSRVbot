@@ -117,7 +117,7 @@ func getParticipants(giveawayId int) ([]Participant, error) {
 
 func getParticipantsNames(giveawayId int) ([]string, error) {
 	var participants []Participant
-	_, err := DbMap.Select(&participants, "SELECT UserName FROM Participants WHERE giveawayId = ?", giveawayId)
+	_, err := DbMap.Select(&participants, "SELECT UserName FROM Participants WHERE giveawayId = ? AND is_accepted = true", giveawayId)
 	if err != nil {
 		return nil, err
 	}
@@ -128,9 +128,9 @@ func getParticipantsNames(giveawayId int) ([]string, error) {
 	return names, nil
 }
 
-func getParticipantByUserId(userId string) *Participant {
+func getParticipantByMessageId(messageId string) *Participant {
 	var participant Participant
-	err := DbMap.SelectOne(participant, "SELECT * FROM participants WHERE user_id = ? AND is_accepted IS NULL", userId)
+	err := DbMap.SelectOne(participant, "SELECT * FROM participants WHERE message_id = ?", messageId)
 	if err != nil {
 		fmt.Println(err)
 		return nil
