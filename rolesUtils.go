@@ -7,8 +7,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func getRoleID(guildID *string, roleName string) (string, error) {
-	guild, err := session.Guild(*guildID)
+func getRoleID(guildID string, roleName string) (string, error) {
+	guild, err := session.Guild(guildID)
 	if err != nil {
 		fmt.Println(err)
 		return "", errors.New("unable to retrieve guild")
@@ -23,7 +23,7 @@ func getRoleID(guildID *string, roleName string) (string, error) {
 }
 
 func hasRole(member *discordgo.Member, roleName string) bool {
-	adminRole, err := getRoleID(&member.GuildID, roleName)
+	adminRole, err := getRoleID(member.GuildID, roleName)
 	if err != nil {
 		fmt.Println(err)
 		return false

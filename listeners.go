@@ -68,54 +68,57 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if args[0] == "csrvbot" {
+		if len(args) == 2 {
+			if args[1] == "info" {
+				printServerInfo(&m.ChannelID, &m.GuildID)
+				return
+			}
+			if args[1] == "start" {
+				//			forceStart <- m.GuildID
+				return
+			}
+			if args[1] == "delete" {
+				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				if !hasRole(member, config.AdminRole) {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+					return
+				}
+				if len(args) == 2 {
+					_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
+					if err != nil {
+						fmt.Println(err)
+					}
+					return
+				}
+				deleteFromGiveaway(args[2], m.GuildID)
+			}
+			if args[1] == "blacklist" {
+				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				if !hasRole(member, config.AdminRole) {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+					return
+				}
+				if len(args) == 2 {
+					_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
+					if err != nil {
+						fmt.Println(err)
+					}
+					return
+				}
+				blacklistUser(args[2], m.GuildID)
+			}
+		}
 		_, err := s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|info>")
 		if err != nil {
 			fmt.Println(err)
-		}
-		if args[1] == "info" {
-			printServerInfo(&m.ChannelID, &m.GuildID)
-			return
-		}
-		if args[1] == "start" {
-			//			forceStart <- m.GuildID
-			return
-		}
-		if args[1] == "delete" {
-			member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			if !hasRole(member, config.AdminRole) {
-				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
-				return
-			}
-			if len(args) == 2 {
-				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
-				if err != nil {
-					fmt.Println(err)
-				}
-				return
-			}
-			deleteFromGiveaway(&args[2], &m.GuildID)
-		}
-		if args[1] == "blacklist" {
-			member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			if !hasRole(member, config.AdminRole) {
-				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
-			}
-			if len(args) == 2 {
-				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
-				if err != nil {
-					fmt.Println(err)
-				}
-				return
-			}
-			blacklistUser(&args[2], &m.GuildID)
 		}
 	}
 }

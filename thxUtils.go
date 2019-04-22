@@ -21,7 +21,7 @@ func (participant *Participant) update() {
 	return
 }
 
-func isThxMessage(messageID *string) bool {
+func isThxMessage(messageID string) bool {
 	ret, err := DbMap.SelectInt("SELECT count(*) FROM participants WHERE message_id = ?", messageID)
 	if err != nil {
 		fmt.Println(err)
@@ -36,7 +36,7 @@ func isThxMessage(messageID *string) bool {
 	return false
 }
 
-func printThxInfoMessage(channelId, participantId *string, giveawayId int, state State) {
+func printThxInfoMessage(channelId, participantId string, giveawayId int, state State) *string {
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -53,7 +53,7 @@ func printThxInfoMessage(channelId, participantId *string, giveawayId int, state
 			"Nagrody rozdajemy o 20:00, Powodzenia!",
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Added", Value: "<@" + *participantId + ">", Inline: true})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Added", Value: "<@" + participantId + ">", Inline: true})
 	var status string
 	if state == wait {
 		status = "Oczekiwanie"
@@ -63,4 +63,10 @@ func printThxInfoMessage(channelId, participantId *string, giveawayId int, state
 		status = "Odrzucono"
 	}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Status", Value: status, Inline: true})
+	message, err := session.ChannelMessageSendEmbed(channelId, &embed)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return &message.ID
 }

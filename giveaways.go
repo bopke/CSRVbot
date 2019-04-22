@@ -147,10 +147,10 @@ func getParticipantsNamesString(giveawayId int) string {
 	return strings.Join(participants, ", ")
 }
 
-func notifyWinner(guildID *string, channelID *string, winnerID *string) {
+func notifyWinner(guildID, channelID string, winnerID *string) {
 
 	if winnerID == nil {
-		_, err := session.ChannelMessageSend(*channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
+		_, err := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -166,7 +166,7 @@ func notifyWinner(guildID *string, channelID *string, winnerID *string) {
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: getCSRVCode()})
-	winner, err := session.GuildMember(*guildID, *winnerID)
+	winner, err := session.GuildMember(guildID, *winnerID)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -186,23 +186,23 @@ func notifyWinner(guildID *string, channelID *string, winnerID *string) {
 		},
 		Description: winner.User.Username + " wygrał kod. Moje gratulacje ;)",
 	}
-	_, err = session.ChannelMessageSendEmbed(*channelID, &embed)
+	_, err = session.ChannelMessageSendEmbed(channelID, &embed)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func deleteFromGiveaway(userID, guildID *string) {
+func deleteFromGiveaway(userID, guildID string) {
 	//TODO: PRZYTUL BAZE
 	return
 }
 
-func blacklistUser(userID, guildID *string) {
+func blacklistUser(userID, guildID string) {
 	//TODO: PRZYTUL BAZE
 	return
 }
 
-func isBlacklisted(userID, guildID *string) bool {
+func isBlacklisted(userID, guildID string) bool {
 	//TODO: PRZYTUL BAZE
 	return true
 }
