@@ -17,7 +17,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		return
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
-	if hasRole(member, config.AdminRole) {
+	if hasRole(member, config.AdminRole) && (r.Emoji.Name == "thumbsup" || r.Emoji.Name == "thumbsdown") {
 		participant := getParticipantByMessageId(r.MessageID)
 		participant.AcceptTime.Time = time.Now()
 		participant.AcceptUser.String = member.User.Username
