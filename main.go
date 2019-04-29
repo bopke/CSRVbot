@@ -76,10 +76,9 @@ func main() {
 		panic(err)
 	}
 	for i := 0; i < len(session.State.Guilds); i++ {
+		// Jak się tak dziwnie nie wyciągnie gildii to nie działa
 		guild, _ := session.Guild(session.State.Guilds[i].ID)
-		fmt.Println("petla 1. " + guild.Name)
 		for _, channel := range guild.Channels {
-			fmt.Println("petla 2. " + channel.Name)
 			if channel.Name == config.MainChannel {
 				giveaway := getGiveawayForGuild(guild.ID)
 				if giveaway == nil {
@@ -97,7 +96,6 @@ func main() {
 			}
 		}
 	}
-	fmt.Println("no i nara.")
 
 	go waitForGiveaways()
 
