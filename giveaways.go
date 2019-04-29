@@ -36,12 +36,11 @@ func getCurrentGiveawayTime(giveawayId int) time.Time {
 	return giveaway.StartTime.Add(24 * time.Hour)
 }
 
-func getGiveawayForGuild(guildId *string) *Giveaway {
+func getGiveawayForGuild(guildId string) *Giveaway {
 	var giveaway Giveaway
-	err := DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guildId = ? AND EndTime IS NULL", *guildId)
+	err := DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guild_id = ? AND end_time IS NULL", guildId)
 	if err != nil {
 		fmt.Println(err)
-		// TODO: z rozumkiem to jakoś zrobić
 		return nil
 	}
 	return &giveaway

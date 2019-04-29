@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
 	"syscall"
-
-	"github.com/bwmarrin/discordgo"
+	"time"
 )
 
 type Config struct {
@@ -75,6 +75,29 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	for i := 0; i < len(session.State.Guilds); i++ {
+		guild, _ := session.Guild(session.State.Guilds[i].ID)
+		fmt.Println("petla 1. " + guild.Name)
+		for _, channel := range guild.Channels {
+			fmt.Println("petla 2. " + channel.Name)
+			if channel.Name == config.MainChannel {
+				giveaway := getGiveawayForGuild(guild.ID)
+				if giveaway == nil {
+					giveaway = &Giveaway{
+						StartTime: time.Now(),
+						GuildId:   guild.ID,
+						GuildName: guild.Name,
+					}
+					err := DbMap.Insert(giveaway)
+					if err != nil {
+						fmt.Print(err)
+					}
+				}
+				break
+			}
+		}
+	}
+	fmt.Println("no i nara.")
 
 	go waitForGiveaways()
 

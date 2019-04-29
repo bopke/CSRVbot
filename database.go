@@ -47,7 +47,7 @@ type Blacklist struct {
 var DbMap gorp.DbMap
 
 func InitDB() {
-	db, err := sql.Open("mysql", config.MysqlUser+":"+config.MysqlPassword+"@tcp("+config.MysqlHost+":"+fmt.Sprint(config.MysqlPort)+")/"+config.MysqlDatabase)
+	db, err := sql.Open("mysql", config.MysqlUser+":"+config.MysqlPassword+"@tcp("+config.MysqlHost+":"+fmt.Sprint(config.MysqlPort)+")/"+config.MysqlDatabase+"?parseTime=true")
 	if err != nil {
 		panic(err)
 	}
