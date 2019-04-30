@@ -70,3 +70,11 @@ func (participant *Participant) update() {
 	}
 	return
 }
+
+func (giveaway *Giveaway) update() {
+	_, err := DbMap.Update(giveaway)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return
+}

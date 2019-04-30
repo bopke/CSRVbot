@@ -62,11 +62,22 @@ func finishGiveaways() {
 			continue
 		}
 		if participants == nil {
-			notifyWinner(giveaway.GuildId, giveawayChannelId, nil)
+			notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
 		}
+		code := getCSRVCode()
 		rand.Seed(time.Now().UnixNano())
 		winner := participants[rand.Int()%len(participants)]
-		notifyWinner(giveaway.GuildId, giveawayChannelId, &winner.UserId)
+		giveaway.InfoMessageId.String = notifyWinner(giveaway.GuildId, giveawayChannelId, &winner.UserId, code)
+		giveaway.InfoMessageId.Valid = true
+		giveaway.EndTime.Time = time.Now()
+		giveaway.EndTime.Valid = true
+		giveaway.Code.String = code
+		giveaway.Code.Valid = true
+		giveaway.WinnerId.String = winner.UserId
+		giveaway.WinnerId.Valid = true
+		giveaway.WinnerName.String = winner.UserName
+		giveaway.WinnerName.Valid = true
+		giveaway.update()
 	}
 }
 
@@ -102,14 +113,14 @@ func getParticipantsNamesString(giveawayId int) string {
 	return strings.Join(participants, ", ")
 }
 
-func notifyWinner(guildID, channelID string, winnerID *string) {
+func notifyWinner(guildID, channelID string, winnerID *string, code string) string {
 
 	if winnerID == nil {
-		_, err := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
+		message, err := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
 		if err != nil {
 			fmt.Println(err)
 		}
-		return
+		return message.ID
 	}
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
@@ -120,7 +131,7 @@ func notifyWinner(guildID, channelID string, winnerID *string) {
 		Description: "Gratulacje! W loterii wygrałeś darmowy kod na serwer w CraftServe!",
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: getCSRVCode()})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: code})
 	winner, err := session.GuildMember(guildID, *winnerID)
 	if err != nil {
 		fmt.Println(err)
@@ -141,10 +152,11 @@ func notifyWinner(guildID, channelID string, winnerID *string) {
 		},
 		Description: winner.User.Username + " wygrał kod. Moje gratulacje ;)",
 	}
-	_, err = session.ChannelMessageSendEmbed(channelID, &embed)
+	message, err := session.ChannelMessageSendEmbed(channelID, &embed)
 	if err != nil {
 		fmt.Println(err)
 	}
+	return message.ID
 }
 
 func deleteFromGiveaway(userID, guildID string) {
