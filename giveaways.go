@@ -2,38 +2,20 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-var forceStart = make(chan int, 1)
-
-func getNextGiveawayTime() time.Time {
+func getCurrentGiveawayTime() time.Time {
 	now := time.Now()
-	if now.Hour() > config.GiveawayTimeH || (now.Hour() == config.GiveawayTimeH && now.Minute() >= config.GiveawayTimeM) {
-		now = now.Add(24 * time.Hour)
+	giveawayDate := time.Date(now.Year(), now.Month(), now.Day(), config.GiveawayTimeH, config.GiveawayTimeM, 0, 0, now.Location())
+	if now.Hour() < config.GiveawayTimeH || (now.Hour() == config.GiveawayTimeH && now.Minute() < config.GiveawayTimeM) {
+		return giveawayDate
 	}
-	return time.Date(now.Year(),
-		now.Month(),
-		now.Day(),
-		config.GiveawayTimeH,
-		config.GiveawayTimeM,
-		0,
-		0,
-		now.Location())
-}
-
-func getCurrentGiveawayTime(giveawayId int) time.Time {
-	var giveaway Giveaway
-	err := DbMap.SelectOne(&giveaway, "SELECT start_time FROM giveaways WHERE GiveawayId = ?", giveawayId)
-	if err != nil {
-		fmt.Println(err)
-		// TODO: z rozumkiem to jakoś zrobić
-		return time.Now().Add(24 * time.Hour)
-	}
-	return giveaway.StartTime.Add(24 * time.Hour)
+	return giveawayDate.Add(24 * time.Hour)
 }
 
 func getGiveawayForGuild(guildId string) *Giveaway {
@@ -46,22 +28,9 @@ func getGiveawayForGuild(guildId string) *Giveaway {
 	return &giveaway
 }
 
-func waitForGiveaway(giveawayID int) {
-	giveawayTime := getCurrentGiveawayTime(giveawayID)
-thatwasntme:
-	select {
-	case x := <-forceStart:
-		if x != giveawayID {
-			goto thatwasntme
-		}
-	case <-time.After(time.Until(giveawayTime)):
-	}
-	finishGiveaway(giveawayID)
-}
-
 func getAllUnfinishedGiveaways() []Giveaway {
 	var res []Giveaway
-	_, err := DbMap.Select(&res, "SELECT * FROM giveaways WHERE EndTime IS NULL")
+	_, err := DbMap.Select(&res, "SELECT * FROM giveaways WHERE end_time IS NULL")
 	if err != nil {
 		fmt.Println(err)
 		return nil
@@ -70,48 +39,35 @@ func getAllUnfinishedGiveaways() []Giveaway {
 }
 
 func waitForGiveaways() {
+	time.Sleep(time.Until(getCurrentGiveawayTime()))
+	finishGiveaways()
 	return
 }
 
-func finishGiveaway(giveawayId int) {
-	var giveaway Giveaway
-	err := DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE giveawayId = ?", giveawayId)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	participants, err := getParticipants(giveawayId)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if len(participants) == 0 {
-		guild, err := session.Guild(giveaway.GuildId)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		for i := range guild.Channels {
-			if guild.Channels[i].Name == config.MainChannel {
-				_, err := session.ChannelMessageSend(guild.Channels[i].ID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
-				if err != nil {
-
-				}
+func finishGiveaways() {
+	giveaways := getAllUnfinishedGiveaways()
+	for _, giveaway := range giveaways {
+		guild, _ := session.Guild(giveaway.GuildId)
+		var giveawayChannelId string
+		for _, channel := range guild.Channels {
+			if channel.Name == config.MainChannel {
+				giveawayChannelId = channel.ID
+				break
 			}
 		}
+		var participants []Participant
+		_, err := DbMap.Select(&participants, "SELECT * FROM participants WHERE giveaway_id = ?", giveaway.Id)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if participants == nil {
+			notifyWinner(giveaway.GuildId, giveawayChannelId, nil)
+		}
+		rand.Seed(time.Now().UnixNano())
+		winner := participants[rand.Int()%len(participants)]
+		notifyWinner(giveaway.GuildId, giveawayChannelId, &winner.UserId)
 	}
-	// notifyWinner()
-	// printGiveawayInfo()
-	return
-}
-
-func getParticipants(giveawayId int) ([]Participant, error) {
-	var res []Participant
-	_, err := DbMap.Select(&res, "SELECT * FROM Participants WHERE giveawayId = ? AND is_accepted = true", giveawayId)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
 }
 
 func getParticipantsNames(giveawayId int) ([]string, error) {
