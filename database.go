@@ -62,3 +62,11 @@ func InitDB() {
 		panic(err)
 	}
 }
+
+func (participant *Participant) update() {
+	_, err := DbMap.Update(participant)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return
+}

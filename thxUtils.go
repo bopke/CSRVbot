@@ -13,14 +13,6 @@ const (
 	reject
 )
 
-func (participant *Participant) update() {
-	_, err := DbMap.Update(participant)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return
-}
-
 func isThxMessage(messageID string) bool {
 	ret, err := DbMap.SelectInt("SELECT count(*) FROM participants WHERE message_id = ?", messageID)
 	if err != nil {
