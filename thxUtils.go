@@ -44,6 +44,7 @@ func updateThxInfoMessage(messageId *string, channelId, participantId string, gi
 			"W aktualnym giveawayu są: " + getParticipantsNamesString(giveawayId) + "\n\n" +
 			"Nagrody rozdajemy o 20:00, Powodzenia!",
 	}
+	embed.Color = 0x234d20
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Added", Value: "<@" + participantId + ">", Inline: true})
 	var status string

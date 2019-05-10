@@ -128,8 +128,7 @@ func printServerInfo(channelID *string, guildID *string) *discordgo.Message {
 		fmt.Println(err)
 	}
 	embed.Description = "ID:" + *guildID
-	//TODO: kolor embedu jakis sensowny
-	//	embed.Color
+	embed.Color = 0x234d20
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Region", Value: guild.Region})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Kanały", Value: string(len(guild.Channels)) + " kanałów"})
