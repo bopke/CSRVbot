@@ -17,7 +17,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		return
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
-	if hasRole(member, config.AdminRole, r.GuildID) && (r.Emoji.Name == "👍" || r.Emoji.Name == "👎") {
+	if hasRole(member, config.AdminRole, r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
 		participant := getParticipantByMessageId(r.MessageID)
 		participant.AcceptTime.Time = time.Now()
 		participant.AcceptTime.Valid = true
@@ -26,10 +26,10 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		participant.AcceptUserId.String = r.UserID
 		participant.AcceptUserId.Valid = true
 		participant.IsAccepted.Valid = true
-		if r.Emoji.Name == "👍" {
+		if r.Emoji.Name == "✅" {
 			participant.IsAccepted.Bool = true
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, confirm)
-		} else if r.Emoji.Name == "👎" {
+		} else if r.Emoji.Name == "⛔" {
 			participant.IsAccepted.Bool = false
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, reject)
 		}
@@ -100,8 +100,8 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
 			fmt.Println(err)
 		}
-		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "👍")
-		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "👎")
+		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅")
+		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔")
 		return
 	}
 	if args[0] == "giveaway" {
