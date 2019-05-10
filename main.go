@@ -135,25 +135,16 @@ func printServerInfo(channelID *string, guildID *string) *discordgo.Message {
 	return msg
 }
 
-func printGiveawayInfo(channelID *string, guildID *string) *discordgo.Message {
+func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 	info := "**Ten bot organizuje giveaway kodów na serwery Diamond.**\n" +
 		"**Każdy kod przedłuża serwer o 7 dni.**\n" +
 		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
 		"**Sponsorem tego bota jest https://craftserve.pl/ - hosting serwerów Minecraft.**\n\n" +
-		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n"
-		/*	participants, err := getParticipantsNames(getGiveawayForGuild(guildID).Id)
-			if err != nil {
-				fmt.Println(err)
-				return nil
-			}
-			if participants != nil {
-				info += "Uczestnicy: "
-				info += strings.Join(participants, ", ")
-				info += "\n\nNagrody rozdajemy o 19:00, Powodzenia!"
-			} else {
-
-			}
-		*/m, err := session.ChannelMessageSend(*channelID, info)
+		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
+		"Uczestnicy: " +
+		getParticipantsNamesString(getGiveawayForGuild(guildID).Id) +
+		"\n\nNagrody rozdajemy o 19:00, Powodzenia!"
+	m, err := session.ChannelMessageSend(channelID, info)
 	if err != nil {
 		fmt.Println(err)
 	}

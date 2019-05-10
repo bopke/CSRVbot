@@ -57,12 +57,12 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	args := strings.Fields(m.Content)
 	if args[0] == "thx" {
 		if len(args) != 2 {
-			printGiveawayInfo(&m.ChannelID, &m.GuildID)
+			printGiveawayInfo(m.ChannelID, m.GuildID)
 			return
 		}
 		match, _ := regexp.Match("<@[!]?[0-9]*>", []byte(args[1]))
 		if !match {
-			printGiveawayInfo(&m.ChannelID, &m.GuildID)
+			printGiveawayInfo(m.ChannelID, m.GuildID)
 			return
 		}
 		args[1] = args[1][2 : len(args[1])-1]
@@ -105,7 +105,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if args[0] == "giveaway" {
-		printGiveawayInfo(&m.ChannelID, &m.GuildID)
+		printGiveawayInfo(m.ChannelID, m.GuildID)
 		return
 	}
 	if args[0] == "csrvbot" {
