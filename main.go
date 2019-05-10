@@ -3,13 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/robfig/cron"
 )
 
 type Config struct {
@@ -57,6 +59,8 @@ func loadConfig() (c Config) {
 	if m > 59 || m < 0 {
 		panic("Minutes must be greater or equal 0 and less than 60!")
 	}
+	c.GiveawayTimeM = m
+	c.GiveawayTimeH = h
 	return
 }
 
@@ -97,7 +101,11 @@ func main() {
 		}
 	}
 
-	go waitForGiveaways()
+	c := cron.New()
+
+	fmt.Println(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH))
+	_ = c.AddFunc(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH), finishGiveaways)
+	c.Start()
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)

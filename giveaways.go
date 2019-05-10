@@ -9,15 +9,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func getCurrentGiveawayTime() time.Time {
-	now := time.Now()
-	giveawayDate := time.Date(now.Year(), now.Month(), now.Day(), config.GiveawayTimeH, config.GiveawayTimeM, 0, 0, now.Location())
-	if now.Hour() < config.GiveawayTimeH || (now.Hour() == config.GiveawayTimeH && now.Minute() < config.GiveawayTimeM) {
-		return giveawayDate
-	}
-	return giveawayDate.Add(24 * time.Hour)
-}
-
 func getGiveawayForGuild(guildId string) *Giveaway {
 	var giveaway Giveaway
 	err := DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guild_id = ? AND end_time IS NULL", guildId)
@@ -36,12 +27,6 @@ func getAllUnfinishedGiveaways() []Giveaway {
 		return nil
 	}
 	return res
-}
-
-func waitForGiveaways() {
-	time.Sleep(time.Until(getCurrentGiveawayTime()))
-	finishGiveaways()
-	return
 }
 
 func finishGiveaways() {
