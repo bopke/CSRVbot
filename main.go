@@ -116,26 +116,28 @@ func main() {
 	}
 }
 
-func printServerInfo(channelID *string, guildID *string) *discordgo.Message {
-	embed := discordgo.MessageEmbed{}
-	embed.Author = &discordgo.MessageEmbedAuthor{
-		URL:     "https://craftserve.pl",
-		Name:    "Informacje o serwerze",
-		IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
+func printServerInfo(channelID, guildID string) *discordgo.Message {
+	embed := discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://craftserve.pl",
+			Name:    "Informacje o serwerze",
+			IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
+		},
+		Description: "ID:" + guildID,
+		Color:       0x234d20,
+		Timestamp:   time.Now().Format(time.RFC3339),
 	}
-	guild, err := session.Guild(*guildID)
+	guild, err := session.Guild(guildID)
 	if err != nil {
 		fmt.Println(err)
 	}
-	embed.Description = "ID:" + *guildID
-	embed.Color = 0x234d20
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Region", Value: guild.Region})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Kanały", Value: string(len(guild.Channels)) + " kanałów"})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Użytkowników [" + string(guild.MemberCount) + "]"})
-	//TODO: czas!
-	//	embed.Fields = append(embed.Fields,&discordgo.MessageEmbedField{Name: "Data utworzenia",Value:time.Unix(guild.JoinedAt)})
-	msg, err := session.ChannelMessageSendEmbed(*channelID, &embed)
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: fmt.Sprintf("Użytkowników [%d]", guild.MemberCount), Value: "Wielu"})
+	createTime, _ := guild.JoinedAt.Parse()
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Data utworzenia", Value: createTime.Format(time.RFC3339)})
+	msg, err := session.ChannelMessageSendEmbed(channelID, &embed)
 	if err != nil {
 		fmt.Println(err)
 	}

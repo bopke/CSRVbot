@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"time"
 )
 
 type State byte
@@ -43,6 +44,7 @@ func updateThxInfoMessage(messageId *string, channelId, participantId string, gi
 			"**Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.**\n\n" +
 			"W aktualnym giveawayu są: " + getParticipantsNamesString(giveawayId) + "\n\n" +
 			"Nagrody rozdajemy o 20:00, Powodzenia!",
+		Timestamp: time.Now().Format(time.RFC3339),
 	}
 	embed.Color = 0x234d20
 	embed.Fields = []*discordgo.MessageEmbedField{}

@@ -111,7 +111,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if args[0] == "csrvbot" {
 		if len(args) == 2 {
 			if args[1] == "info" {
-				printServerInfo(&m.ChannelID, &m.GuildID)
+				printServerInfo(m.ChannelID, m.GuildID)
 				return
 			}
 			if args[1] == "start" {
