@@ -29,6 +29,30 @@ func getAllUnfinishedGiveaways() []Giveaway {
 	return res
 }
 
+func createMissingGiveaways() {
+	for i := 0; i < len(session.State.Guilds); i++ {
+		// Jak się tak dziwnie nie wyciągnie gildii to nie działa
+		guild, _ := session.Guild(session.State.Guilds[i].ID)
+		for _, channel := range guild.Channels {
+			if channel.Name == config.MainChannel {
+				giveaway := getGiveawayForGuild(guild.ID)
+				if giveaway == nil {
+					giveaway = &Giveaway{
+						StartTime: time.Now(),
+						GuildId:   guild.ID,
+						GuildName: guild.Name,
+					}
+					err := DbMap.Insert(giveaway)
+					if err != nil {
+						fmt.Print(err)
+					}
+				}
+				break
+			}
+		}
+	}
+}
+
 func finishGiveaways() {
 	giveaways := getAllUnfinishedGiveaways()
 	for _, giveaway := range giveaways {
@@ -46,8 +70,9 @@ func finishGiveaways() {
 			fmt.Println(err)
 			continue
 		}
-		if participants == nil {
+		if participants == nil || len(participants) == 0 {
 			notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
+			continue
 		}
 		code := getCSRVCode()
 		rand.Seed(time.Now().UnixNano())
@@ -64,6 +89,7 @@ func finishGiveaways() {
 		giveaway.WinnerName.Valid = true
 		giveaway.update()
 	}
+	createMissingGiveaways()
 }
 
 func getParticipantsNames(giveawayId int) ([]string, error) {

@@ -79,31 +79,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	for i := 0; i < len(session.State.Guilds); i++ {
-		// Jak się tak dziwnie nie wyciągnie gildii to nie działa
-		guild, _ := session.Guild(session.State.Guilds[i].ID)
-		for _, channel := range guild.Channels {
-			if channel.Name == config.MainChannel {
-				giveaway := getGiveawayForGuild(guild.ID)
-				if giveaway == nil {
-					giveaway = &Giveaway{
-						StartTime: time.Now(),
-						GuildId:   guild.ID,
-						GuildName: guild.Name,
-					}
-					err := DbMap.Insert(giveaway)
-					if err != nil {
-						fmt.Print(err)
-					}
-				}
-				break
-			}
-		}
-	}
+	createMissingGiveaways()
 
 	c := cron.New()
 
-	fmt.Println(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH))
 	_ = c.AddFunc(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH), finishGiveaways)
 	c.Start()
 

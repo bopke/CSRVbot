@@ -111,11 +111,29 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if args[0] == "csrvbot" {
 		if len(args) == 2 {
 			if args[1] == "info" {
+				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				if !hasRole(member, config.AdminRole, m.GuildID) {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+					return
+				}
 				printServerInfo(m.ChannelID, m.GuildID)
 				return
 			}
 			if args[1] == "start" {
-				//			forceStart <- m.GuildID
+				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				if !hasRole(member, config.AdminRole, m.GuildID) {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+					return
+				}
+				finishGiveaways()
 				return
 			}
 			if args[1] == "delete" {
@@ -155,6 +173,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				blacklistUser(args[2], m.GuildID)
+				return
 			}
 		}
 		_, err := s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|info>")
