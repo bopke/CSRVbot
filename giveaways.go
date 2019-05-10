@@ -72,6 +72,9 @@ func finishGiveaways() {
 		}
 		if participants == nil || len(participants) == 0 {
 			notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
+			giveaway.EndTime.Time = time.Now()
+			giveaway.EndTime.Valid = true
+			giveaway.update()
 			continue
 		}
 		code := getCSRVCode()
@@ -130,6 +133,7 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 		message, err := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
 		if err != nil {
 			fmt.Println(err)
+			return ""
 		}
 		return message.ID
 	}
