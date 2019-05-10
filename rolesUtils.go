@@ -22,8 +22,9 @@ func getRoleID(guildID string, roleName string) (string, error) {
 	return "", errors.New("no " + roleName + " role available")
 }
 
-func hasRole(member *discordgo.Member, roleName string) bool {
-	adminRole, err := getRoleID(member.GuildID, roleName)
+func hasRole(member *discordgo.Member, roleName, guildID string) bool {
+	//z jakiegos powodu w strukturze member GuildID jest puste...
+	adminRole, err := getRoleID(guildID, roleName)
 	if err != nil {
 		fmt.Println(err)
 		return false

@@ -28,7 +28,7 @@ func isThxMessage(messageID string) bool {
 	return false
 }
 
-func printThxInfoMessage(channelId, participantId string, giveawayId int, state State) *string {
+func updateThxInfoMessage(messageId *string, channelId, participantId string, giveawayId int, state State) *string {
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -55,10 +55,20 @@ func printThxInfoMessage(channelId, participantId string, giveawayId int, state 
 		status = "Odrzucono"
 	}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Status", Value: status, Inline: true})
-	message, err := session.ChannelMessageSendEmbed(channelId, &embed)
-	if err != nil {
-		fmt.Println(err)
-		return nil
+	var message *discordgo.Message
+	var err error
+	if messageId != nil {
+		message, err = session.ChannelMessageEditEmbed(channelId, *messageId, &embed)
+		if err != nil {
+			fmt.Println(err)
+			return nil
+		}
+	} else {
+		message, err = session.ChannelMessageSendEmbed(channelId, &embed)
+		if err != nil {
+			fmt.Println(err)
+			return nil
+		}
 	}
 	return &message.ID
 }
