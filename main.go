@@ -64,7 +64,10 @@ func loadConfig() (c Config) {
 func InitLog() {
 	file, err := os.OpenFile("csrvbot.log", os.O_APPEND, 0644)
 	if err != nil {
-		log.Panic(err)
+		file, err = os.OpenFile("csrvbot.log", os.O_CREATE, 0644)
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 	log.SetOutput(file)
 }
@@ -91,6 +94,7 @@ func main() {
 	_ = c.AddFunc(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH), finishGiveaways)
 	c.Start()
 
+	log.Println("Bot wystartował")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
