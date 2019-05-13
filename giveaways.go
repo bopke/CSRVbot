@@ -79,7 +79,7 @@ func finishGiveaways() {
 		if participants == nil || len(participants) == 0 {
 			giveaway.EndTime.Time = time.Now()
 			giveaway.EndTime.Valid = true
-			_, err := DbMap.Update(giveaway)
+			_, err := DbMap.Update(&giveaway)
 			if err != nil {
 				_, _ = session.ChannelMessageSend(giveawayChannelId, "Coś poszło nie tak, przenosze giveaway na jutro.")
 				log.Println(err)
@@ -100,7 +100,7 @@ func finishGiveaways() {
 		giveaway.WinnerId.Valid = true
 		giveaway.WinnerName.String = winner.UserName
 		giveaway.WinnerName.Valid = true
-		_, err = DbMap.Update(giveaway)
+		_, err = DbMap.Update(&giveaway)
 		if err != nil {
 			log.Println(err)
 		}

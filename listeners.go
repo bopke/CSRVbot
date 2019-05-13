@@ -36,7 +36,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			participant.IsAccepted.Bool = false
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, reject)
 		}
-		_, err := DbMap.Update(participant)
+		_, err := DbMap.Update(&participant)
 		if err != nil {
 			log.Println(err)
 		}
