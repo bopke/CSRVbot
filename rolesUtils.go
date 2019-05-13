@@ -11,7 +11,7 @@ func getRoleID(guildID string, roleName string) (string, error) {
 	guild, err := session.Guild(guildID)
 	if err != nil {
 		log.Println(err)
-		return "", errors.New("unable to retrieve guild")
+		return "", err
 	}
 	roles := guild.Roles
 	for _, role := range roles {
