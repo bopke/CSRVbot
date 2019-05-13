@@ -61,7 +61,8 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	m.Content = m.Content[1:]
 
 	args := strings.Fields(m.Content)
-	if args[0] == "thx" {
+	switch args[0] {
+	case "thx":
 		if len(args) != 2 {
 			printGiveawayInfo(m.ChannelID, m.GuildID)
 			return
@@ -74,6 +75,13 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		args[1] = args[1][2 : len(args[1])-1]
 		if strings.HasPrefix(args[1], "!") {
 			args[1] = args[1][1:]
+		}
+		if m.Author.ID == args[1] {
+			_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można dziękować sobie!")
+		}
+		user, _ := session.User(args[1])
+		if user.Bot {
+			_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można dziękować botom!")
 		}
 		if isBlacklisted(args[1], m.GuildID) {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Ten użytkownik jest na czarnej liście i nie może brać udziału :(")
@@ -93,12 +101,6 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 		participant.GuildName = guild.Name
-		user, err := session.User(args[1])
-		if err != nil {
-			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
-			fmt.Println(err)
-			return
-		}
 		participant.UserName = user.Username
 		participant.MessageId = *updateThxInfoMessage(nil, m.ChannelID, args[1], participant.GiveawayId, wait)
 		err = DbMap.Insert(&participant)
@@ -108,15 +110,12 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅")
 		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔")
-		return
-	}
-	if args[0] == "giveaway" {
+	case "giveaway":
 		printGiveawayInfo(m.ChannelID, m.GuildID)
-		return
-	}
-	if args[0] == "csrvbot" {
+	case "csrvbot":
 		if len(args) == 2 {
-			if args[1] == "info" {
+			switch args[1] {
+			case "info":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
 					fmt.Println(err)
@@ -127,9 +126,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				printServerInfo(m.ChannelID, m.GuildID)
-				return
-			}
-			if args[1] == "start" {
+			case "start":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
 					fmt.Println(err)
@@ -140,9 +137,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				finishGiveaways()
-				return
-			}
-			if args[1] == "delete" {
+			case "delete":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
 					fmt.Println(err)
@@ -160,8 +155,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				deleteFromGiveaway(args[2], m.GuildID)
-			}
-			if args[1] == "blacklist" {
+			case "blacklist":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
 					fmt.Println(err)
