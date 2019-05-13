@@ -143,6 +143,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				finishGiveaways()
+				return
 			case "delete":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
@@ -168,6 +169,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 				log.Println(m.Author.Username + " usunął " + member.User.Username + " z giveawaya na " + guild.Name)
 				deleteFromGiveaway(args[2], m.GuildID)
+				return
 			case "blacklist":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
