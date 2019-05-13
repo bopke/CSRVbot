@@ -33,7 +33,10 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			participant.IsAccepted.Bool = false
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, reject)
 		}
-		participant.update()
+		_, err := DbMap.Update(participant)
+		if err != nil {
+			fmt.Println(err)
+		}
 		return
 	} else {
 		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)

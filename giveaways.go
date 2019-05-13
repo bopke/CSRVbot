@@ -66,7 +66,7 @@ func finishGiveaways() {
 		}
 		code, err := getCSRVCode()
 		if err != nil {
-			_, _ = session.ChannelMessageSend(giveawayChannelId, "Nie udało mi się pobrać kodu! Przedłużam giveaway...")
+			_, _ = session.ChannelMessageSend(giveawayChannelId, "Coś poszło nie tak, przenosze giveaway na jutro.")
 			fmt.Println(err)
 			continue
 		}
@@ -79,7 +79,12 @@ func finishGiveaways() {
 		if participants == nil || len(participants) == 0 {
 			giveaway.EndTime.Time = time.Now()
 			giveaway.EndTime.Valid = true
-			giveaway.update()
+			_, err := DbMap.Update(giveaway)
+			if err != nil {
+				_, _ = session.ChannelMessageSend(giveawayChannelId, "Coś poszło nie tak, przenosze giveaway na jutro.")
+				fmt.Println(err)
+				continue
+			}
 			notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
 			continue
 		}
@@ -95,7 +100,10 @@ func finishGiveaways() {
 		giveaway.WinnerId.Valid = true
 		giveaway.WinnerName.String = winner.UserName
 		giveaway.WinnerName.Valid = true
-		giveaway.update()
+		_, err = DbMap.Update(giveaway)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 	createMissingGiveaways()
 }

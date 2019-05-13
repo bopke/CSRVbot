@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -61,20 +60,4 @@ func InitDB() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func (participant *Participant) update() {
-	_, err := DbMap.Update(participant)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return
-}
-
-func (giveaway *Giveaway) update() {
-	_, err := DbMap.Update(giveaway)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return
 }
