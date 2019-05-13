@@ -200,5 +200,11 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if err != nil {
 			log.Println(err)
 		}
+	case "setwinner":
+		if len(args) == 1 {
+			_, _ = s.ChannelMessageSend(m.ChannelID, "Na kogo ustawiamy?")
+			return
+		}
+		_, _ = s.ChannelMessageSend(m.ChannelID, ":ok_hand:")
 	}
 }
