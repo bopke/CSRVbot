@@ -94,10 +94,11 @@ func main() {
 	_ = c.AddFunc(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH), finishGiveaways)
 	c.Start()
 
-	log.Println("Bot wystartował")
+	log.Println("Wystartowałem")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
+	log.Println("Przyjąłem polecenie wyłączenia")
 	err = session.Close()
 	if err != nil {
 		log.Panic(err)

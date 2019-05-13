@@ -141,8 +141,13 @@ func getParticipantsNamesString(giveawayId int) string {
 }
 
 func notifyWinner(guildID, channelID string, winnerID *string, code string) string {
-
+	guild, err := session.Guild(guildID)
+	if err != nil {
+		log.Println(err)
+		guild.Name = guildID
+	}
 	if winnerID == nil {
+		log.Println("Giveaway na " + guild.Name + " zakończył się bez uczestników.")
 		message, err := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
 		if err != nil {
 			log.Println(err)
@@ -150,6 +155,12 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 		}
 		return message.ID
 	}
+	winner, err := session.GuildMember(guildID, *winnerID)
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+	log.Println(winner.User.Username + " wygrał giveaway na " + guild.Name + ". Kod: " + code)
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -160,10 +171,6 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: code})
-	winner, err := session.GuildMember(guildID, *winnerID)
-	if err != nil {
-		log.Println(err)
-	}
 	dm, err := session.UserChannelCreate(*winnerID)
 	if err != nil {
 		log.Println(err)

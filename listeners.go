@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -27,9 +28,11 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		participant.AcceptUserId.Valid = true
 		participant.IsAccepted.Valid = true
 		if r.Emoji.Name == "✅" {
+			log.Println(member.User.Username + "(" + member.User.ID + ") zaakceptował udział " + participant.UserName + " w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = true
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, confirm)
 		} else if r.Emoji.Name == "⛔" {
+			log.Println(member.User.Username + "(" + member.User.ID + ") odrzucił udział " + participant.UserName + " w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = false
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, reject)
 		}
@@ -81,6 +84,13 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 		user, _ := session.User(args[1])
+		guild, err := session.Guild(m.GuildID)
+		if err != nil {
+			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
+			log.Println(err)
+			return
+		}
+		log.Println(m.Author.Username + " podziękował " + user.Username + " na " + guild.Name)
 		if user.Bot {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można dziękować botom!")
 			return
@@ -95,12 +105,6 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			CreateTime: time.Now(),
 			GuildId:    m.GuildID,
 			ChannelId:  m.ChannelID,
-		}
-		guild, err := session.Guild(m.GuildID)
-		if err != nil {
-			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
-			log.Println(err)
-			return
 		}
 		participant.GuildName = guild.Name
 		participant.UserName = user.Username
@@ -156,6 +160,13 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					}
 					return
 				}
+				guild, err := session.Guild(m.GuildID)
+				if err != nil {
+					log.Println(m.Author.Username + " usunął " + member.User.Username + " z giveawaya na " + m.GuildID)
+					log.Println(err)
+					return
+				}
+				log.Println(m.Author.Username + " usunął " + member.User.Username + " z giveawaya na " + guild.Name)
 				deleteFromGiveaway(args[2], m.GuildID)
 			case "blacklist":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
@@ -174,6 +185,13 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					}
 					return
 				}
+				guild, err := session.Guild(m.GuildID)
+				if err != nil {
+					log.Println(m.Author.Username + " zblacklistował " + member.User.Username + " na " + m.GuildID)
+					log.Println(err)
+					return
+				}
+				log.Println(m.Author.Username + " zblacklistował " + member.User.Username + " na " + guild.Name)
 				blacklistUser(args[2], m.GuildID)
 				return
 			}
