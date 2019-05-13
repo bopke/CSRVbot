@@ -78,10 +78,12 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		if m.Author.ID == args[1] {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można dziękować sobie!")
+			return
 		}
 		user, _ := session.User(args[1])
 		if user.Bot {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można dziękować botom!")
+			return
 		}
 		if isBlacklisted(args[1], m.GuildID) {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Ten użytkownik jest na czarnej liście i nie może brać udziału :(")
