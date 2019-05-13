@@ -64,8 +64,14 @@ func finishGiveaways() {
 				break
 			}
 		}
+		code, err := getCSRVCode()
+		if err != nil {
+			_, _ = session.ChannelMessageSend(giveawayChannelId, "Nie udało mi się pobrać kodu! Przedłużam giveaway...")
+			fmt.Println(err)
+			continue
+		}
 		var participants []Participant
-		_, err := DbMap.Select(&participants, "SELECT * FROM participants WHERE giveaway_id = ?", giveaway.Id)
+		_, err = DbMap.Select(&participants, "SELECT * FROM participants WHERE giveaway_id = ?", giveaway.Id)
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -76,10 +82,6 @@ func finishGiveaways() {
 			giveaway.update()
 			notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
 			continue
-		}
-		code, err := getCSRVCode()
-		if err != nil {
-
 		}
 		rand.Seed(time.Now().UnixNano())
 		winner := participants[rand.Int()%len(participants)]
