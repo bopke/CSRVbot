@@ -15,14 +15,10 @@ import (
 )
 
 type Config struct {
-	MysqlPort       int    `json:"mysql_port"`
-	MysqlUser       string `json:"mysql_user"`
+	MysqlString     string `json:"mysql_string"`
 	MainChannel     string `json:"main_channel"`
 	BlacklistedRole string `json:"blacklisted_role"`
 	AdminRole       string `json:"admin_role"`
-	MysqlDatabase   string `json:"mysql_database"`
-	MysqlPassword   string `json:"mysql_password"`
-	MysqlHost       string `json:"mysql_host"`
 	GiveawayTimeS   string `json:"giveaway_time"`
 	GiveawayTimeH   int    `json:"-"`
 	GiveawayTimeM   int    `json:"-"`
@@ -139,6 +135,6 @@ func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 	return m
 }
 
-func getCSRVCode() string {
-	return "TEST"
+func getCSRVCode() (string, error) {
+	return "TEST", nil
 }

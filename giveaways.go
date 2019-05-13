@@ -71,13 +71,16 @@ func finishGiveaways() {
 			continue
 		}
 		if participants == nil || len(participants) == 0 {
-			notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
 			giveaway.EndTime.Time = time.Now()
 			giveaway.EndTime.Valid = true
 			giveaway.update()
+			notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
 			continue
 		}
-		code := getCSRVCode()
+		code, err := getCSRVCode()
+		if err != nil {
+
+		}
 		rand.Seed(time.Now().UnixNano())
 		winner := participants[rand.Int()%len(participants)]
 		giveaway.InfoMessageId.String = notifyWinner(giveaway.GuildId, giveawayChannelId, &winner.UserId, code)
