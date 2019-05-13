@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"math/rand"
 	"strings"
 	"time"
@@ -13,7 +13,7 @@ func getGiveawayForGuild(guildId string) *Giveaway {
 	var giveaway Giveaway
 	err := DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guild_id = ? AND end_time IS NULL", guildId)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil
 	}
 	return &giveaway
@@ -23,7 +23,7 @@ func getAllUnfinishedGiveaways() []Giveaway {
 	var res []Giveaway
 	_, err := DbMap.Select(&res, "SELECT * FROM giveaways WHERE end_time IS NULL")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil
 	}
 	return res
@@ -44,7 +44,7 @@ func createMissingGiveaways() {
 					}
 					err := DbMap.Insert(giveaway)
 					if err != nil {
-						fmt.Print(err)
+						log.Print(err)
 					}
 				}
 				break
@@ -67,13 +67,13 @@ func finishGiveaways() {
 		code, err := getCSRVCode()
 		if err != nil {
 			_, _ = session.ChannelMessageSend(giveawayChannelId, "Coś poszło nie tak, przenosze giveaway na jutro.")
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 		var participants []Participant
 		_, err = DbMap.Select(&participants, "SELECT * FROM participants WHERE giveaway_id = ?", giveaway.Id)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 		if participants == nil || len(participants) == 0 {
@@ -82,7 +82,7 @@ func finishGiveaways() {
 			_, err := DbMap.Update(giveaway)
 			if err != nil {
 				_, _ = session.ChannelMessageSend(giveawayChannelId, "Coś poszło nie tak, przenosze giveaway na jutro.")
-				fmt.Println(err)
+				log.Println(err)
 				continue
 			}
 			notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
@@ -102,7 +102,7 @@ func finishGiveaways() {
 		giveaway.WinnerName.Valid = true
 		_, err = DbMap.Update(giveaway)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
 	createMissingGiveaways()
@@ -125,7 +125,7 @@ func getParticipantByMessageId(messageId string) *Participant {
 	var participant Participant
 	err := DbMap.SelectOne(&participant, "SELECT * FROM participants WHERE message_id = ?", messageId)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil
 	}
 	return &participant
@@ -134,7 +134,7 @@ func getParticipantByMessageId(messageId string) *Participant {
 func getParticipantsNamesString(giveawayId int) string {
 	participants, err := getParticipantsNames(giveawayId)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
 	return strings.Join(participants, ", ")
@@ -145,7 +145,7 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 	if winnerID == nil {
 		message, err := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return ""
 		}
 		return message.ID
@@ -162,15 +162,15 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: code})
 	winner, err := session.GuildMember(guildID, *winnerID)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	dm, err := session.UserChannelCreate(*winnerID)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	_, err = session.ChannelMessageSendEmbed(dm.ID, &embed)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	embed = discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
@@ -182,7 +182,7 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 	}
 	message, err := session.ChannelMessageSendEmbed(channelID, &embed)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	return message.ID
 }

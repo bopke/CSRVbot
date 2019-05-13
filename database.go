@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"log"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -48,7 +49,7 @@ var DbMap gorp.DbMap
 func InitDB() {
 	db, err := sql.Open("mysql", config.MysqlString)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	DbMap = gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{"InnoDB", "UTF8MB4"}}
 
@@ -58,6 +59,6 @@ func InitDB() {
 
 	err = DbMap.CreateTablesIfNotExists()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 }

@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"github.com/bwmarrin/discordgo"
+	"log"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 type State byte
@@ -17,14 +18,14 @@ const (
 func isThxMessage(messageID string) bool {
 	ret, err := DbMap.SelectInt("SELECT count(*) FROM participants WHERE message_id = ?", messageID)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return false
 	}
 	if ret == 1 {
 		return true
 	}
 	if ret > 1 {
-		fmt.Println("Co tu sie?")
+		log.Println("Co tu sie?")
 	}
 	return false
 }
@@ -63,13 +64,13 @@ func updateThxInfoMessage(messageId *string, channelId, participantId string, gi
 	if messageId != nil {
 		message, err = session.ChannelMessageEditEmbed(channelId, *messageId, &embed)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return nil
 		}
 	} else {
 		message, err = session.ChannelMessageSendEmbed(channelId, &embed)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return nil
 		}
 	}

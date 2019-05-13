@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"log"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -10,7 +10,7 @@ import (
 func getRoleID(guildID string, roleName string) (string, error) {
 	guild, err := session.Guild(guildID)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return "", errors.New("unable to retrieve guild")
 	}
 	roles := guild.Roles
@@ -26,7 +26,7 @@ func hasRole(member *discordgo.Member, roleName, guildID string) bool {
 	//z jakiegos powodu w strukturze member GuildID jest puste...
 	adminRole, err := getRoleID(guildID, roleName)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return false
 	}
 	for _, role := range member.Roles {

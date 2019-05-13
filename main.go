@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -33,52 +34,60 @@ var session *discordgo.Session
 func loadConfig() (c Config) {
 	configFile, err := os.Open("config.json")
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	defer configFile.Close()
 	err = json.NewDecoder(configFile).Decode(&c)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	colon := strings.Index(c.GiveawayTimeS, ":")
 	h, err := strconv.Atoi(c.GiveawayTimeS[:colon])
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	if h > 23 || h < 0 {
 		panic("Hour must be greater or equal 0 and less than 24!")
 	}
 	m, err := strconv.Atoi(c.GiveawayTimeS[colon+1:])
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	if m > 59 || m < 0 {
-		panic("Minutes must be greater or equal 0 and less than 60!")
+		log.Panic("Minutes must be greater or equal 0 and less than 60!")
 	}
 	c.GiveawayTimeM = m
 	c.GiveawayTimeH = h
 	return
 }
 
+func InitLog() {
+	file, err := os.OpenFile("csrvbot.log", os.O_APPEND, 0644)
+	if err != nil {
+		log.Panic(err)
+	}
+	log.SetOutput(file)
+}
+
 func main() {
+	InitLog()
 	config = loadConfig()
 	InitDB()
 	var err error
 	session, err = discordgo.New("Bot " + config.SystemToken)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	session.AddHandler(OnMessageCreate)
 	session.AddHandler(OnMessageReactionAdd)
 	err = session.Open()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 	createMissingGiveaways()
 
 	c := cron.New()
-
 	_ = c.AddFunc(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH), finishGiveaways)
 	c.Start()
 
@@ -87,7 +96,7 @@ func main() {
 	<-sc
 	err = session.Close()
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 }
 
@@ -104,7 +113,7 @@ func printServerInfo(channelID, guildID string) *discordgo.Message {
 	}
 	guild, err := session.Guild(guildID)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Region", Value: guild.Region})
@@ -114,7 +123,7 @@ func printServerInfo(channelID, guildID string) *discordgo.Message {
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Data utworzenia", Value: createTime.Format(time.RFC3339)})
 	msg, err := session.ChannelMessageSendEmbed(channelID, &embed)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	return msg
 }
@@ -130,7 +139,7 @@ func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 		"\n\nNagrody rozdajemy o 19:00, Powodzenia!"
 	m, err := session.ChannelMessageSend(channelID, info)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	return m
 }

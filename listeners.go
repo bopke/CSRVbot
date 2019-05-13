@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -35,7 +35,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		}
 		_, err := DbMap.Update(participant)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		return
 	} else {
@@ -99,7 +99,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		guild, err := session.Guild(m.GuildID)
 		if err != nil {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 		participant.GuildName = guild.Name
@@ -108,7 +108,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		err = DbMap.Insert(&participant)
 		if err != nil {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
-			fmt.Println(err)
+			log.Println(err)
 		}
 		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅")
 		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔")
@@ -120,7 +120,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			case "info":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					return
 				}
 				if !hasRole(member, config.AdminRole, m.GuildID) {
@@ -131,7 +131,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			case "start":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					return
 				}
 				if !hasRole(member, config.AdminRole, m.GuildID) {
@@ -142,7 +142,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			case "delete":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					return
 				}
 				if !hasRole(member, config.AdminRole, m.GuildID) {
@@ -152,7 +152,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				if len(args) == 2 {
 					_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
 					if err != nil {
-						fmt.Println(err)
+						log.Println(err)
 					}
 					return
 				}
@@ -160,7 +160,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			case "blacklist":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					return
 				}
 				if !hasRole(member, config.AdminRole, m.GuildID) {
@@ -170,7 +170,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				if len(args) == 2 {
 					_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
 					if err != nil {
-						fmt.Println(err)
+						log.Println(err)
 					}
 					return
 				}
@@ -180,7 +180,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		_, err := s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|info>")
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
 }
