@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -150,5 +151,24 @@ func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 }
 
 func getCSRVCode() (string, error) {
-	return "TEST", nil
+	req, err := http.NewRequest("POST", "https://craftserve.pl/api/generate_voucher", nil)
+	if err != nil {
+		return "", err
+	}
+	req.SetBasicAuth("csrvbot", config.CsrvSecret)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var data struct {
+		Code string `json:"code"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return "", err
+	}
+	return data.Code, nil
 }
