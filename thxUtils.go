@@ -16,7 +16,7 @@ const (
 )
 
 func isThxMessage(messageID string) bool {
-	ret, err := DbMap.SelectInt("SELECT count(*) FROM participants WHERE message_id = ?", messageID)
+	ret, err := DbMap.SelectInt("SELECT count(*) FROM Participants WHERE message_id = ?", messageID)
 	if err != nil {
 		log.Println(err)
 		return false

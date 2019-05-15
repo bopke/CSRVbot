@@ -21,7 +21,7 @@ func getGiveawayForGuild(guildId string) *Giveaway {
 
 func getAllUnfinishedGiveaways() []Giveaway {
 	var res []Giveaway
-	_, err := DbMap.Select(&res, "SELECT * FROM giveaways WHERE end_time IS NULL")
+	_, err := DbMap.Select(&res, "SELECT * FROM Giveaways WHERE end_time IS NULL")
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -71,7 +71,7 @@ func finishGiveaways() {
 			continue
 		}
 		var participants []Participant
-		_, err = DbMap.Select(&participants, "SELECT * FROM participants WHERE giveaway_id = ?", giveaway.Id)
+		_, err = DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ?", giveaway.Id)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -123,7 +123,7 @@ func getParticipantsNames(giveawayId int) ([]string, error) {
 
 func getParticipantByMessageId(messageId string) *Participant {
 	var participant Participant
-	err := DbMap.SelectOne(&participant, "SELECT * FROM participants WHERE message_id = ?", messageId)
+	err := DbMap.SelectOne(&participant, "SELECT * FROM Participants WHERE message_id = ?", messageId)
 	if err != nil {
 		log.Println(err)
 		return nil
