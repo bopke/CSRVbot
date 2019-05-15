@@ -30,15 +30,19 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		if r.Emoji.Name == "✅" {
 			log.Println(member.User.Username + "(" + member.User.ID + ") zaakceptował udział " + participant.UserName + " w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = true
+			_, err := DbMap.Update(participant)
+			if err != nil {
+				log.Panicln(err)
+			}
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, confirm)
 		} else if r.Emoji.Name == "⛔" {
 			log.Println(member.User.Username + "(" + member.User.ID + ") odrzucił udział " + participant.UserName + " w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = false
+			_, err := DbMap.Update(participant)
+			if err != nil {
+				log.Panicln(err)
+			}
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, reject)
-		}
-		_, err := DbMap.Update(participant)
-		if err != nil {
-			log.Panicln(err)
 		}
 		return
 	} else {
