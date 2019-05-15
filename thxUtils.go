@@ -18,14 +18,10 @@ const (
 func isThxMessage(messageID string) bool {
 	ret, err := DbMap.SelectInt("SELECT count(*) FROM Participants WHERE message_id = ?", messageID)
 	if err != nil {
-		log.Println(err)
-		return false
+		log.Panicln(err)
 	}
 	if ret == 1 {
 		return true
-	}
-	if ret > 1 {
-		log.Println("Co tu sie?")
 	}
 	return false
 }

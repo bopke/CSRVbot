@@ -13,7 +13,7 @@ func getGiveawayForGuild(guildId string) *Giveaway {
 	var giveaway Giveaway
 	err := DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guild_id = ? AND end_time IS NULL", guildId)
 	if err != nil {
-		log.Println(err)
+		log.Panicln(err)
 		return nil
 	}
 	return &giveaway
@@ -23,7 +23,7 @@ func getAllUnfinishedGiveaways() []Giveaway {
 	var res []Giveaway
 	_, err := DbMap.Select(&res, "SELECT * FROM Giveaways WHERE end_time IS NULL")
 	if err != nil {
-		log.Println(err)
+		log.Panicln(err)
 		return nil
 	}
 	return res
@@ -44,7 +44,7 @@ func createMissingGiveaways() {
 					}
 					err := DbMap.Insert(giveaway)
 					if err != nil {
-						log.Print(err)
+						log.Panicln(err)
 					}
 				}
 				break
@@ -56,87 +56,85 @@ func createMissingGiveaways() {
 func finishGiveaways() {
 	giveaways := getAllUnfinishedGiveaways()
 	for _, giveaway := range giveaways {
-		guild, _ := session.Guild(giveaway.GuildId)
-		var giveawayChannelId string
-		for _, channel := range guild.Channels {
-			if channel.Name == config.MainChannel {
-				giveawayChannelId = channel.ID
-				break
-			}
+		finishGiveaway(giveaway.GuildId)
+	}
+}
+
+func finishGiveaway(guildID string) {
+	giveaway := getGiveawayForGuild(guildID)
+	guild, _ := session.Guild(giveaway.GuildId)
+	var giveawayChannelId string
+	for _, channel := range guild.Channels {
+		if channel.Name == config.MainChannel {
+			giveawayChannelId = channel.ID
+			break
 		}
-		code, err := getCSRVCode()
-		if err != nil {
-			_, _ = session.ChannelMessageSend(giveawayChannelId, "Coś poszło nie tak, przenosze giveaway na jutro.")
-			log.Println(err)
-			continue
-		}
-		var participants []Participant
-		_, err = DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ?", giveaway.Id)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		if participants == nil || len(participants) == 0 {
-			giveaway.EndTime.Time = time.Now()
-			giveaway.EndTime.Valid = true
-			_, err := DbMap.Update(&giveaway)
-			if err != nil {
-				_, _ = session.ChannelMessageSend(giveawayChannelId, "Coś poszło nie tak, przenosze giveaway na jutro.")
-				log.Println(err)
-				continue
-			}
-			notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
-			continue
-		}
-		rand.Seed(time.Now().UnixNano())
-		winner := participants[rand.Int()%len(participants)]
-		giveaway.InfoMessageId.String = notifyWinner(giveaway.GuildId, giveawayChannelId, &winner.UserId, code)
-		giveaway.InfoMessageId.Valid = true
+	}
+	code, err := getCSRVCode()
+	if err != nil {
+		log.Println(err)
+		_, _ = session.ChannelMessageSend(giveawayChannelId, "Błąd API Craftserve, nie udało się pobrać kodu!")
+		return
+	}
+	var participants []Participant
+	_, err = DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ?", giveaway.Id)
+	if err != nil {
+		log.Panicln(err)
+	}
+	if participants == nil || len(participants) == 0 {
 		giveaway.EndTime.Time = time.Now()
 		giveaway.EndTime.Valid = true
-		giveaway.Code.String = code
-		giveaway.Code.Valid = true
-		giveaway.WinnerId.String = winner.UserId
-		giveaway.WinnerId.Valid = true
-		giveaway.WinnerName.String = winner.UserName
-		giveaway.WinnerName.Valid = true
-		_, err = DbMap.Update(&giveaway)
+		_, err := DbMap.Update(&giveaway)
 		if err != nil {
-			log.Println(err)
+			log.Panicln(err)
 		}
+		notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
+		return
+	}
+	rand.Seed(time.Now().UnixNano())
+	winner := participants[rand.Int()%len(participants)]
+	giveaway.InfoMessageId.String = notifyWinner(giveaway.GuildId, giveawayChannelId, &winner.UserId, code)
+	giveaway.InfoMessageId.Valid = true
+	giveaway.EndTime.Time = time.Now()
+	giveaway.EndTime.Valid = true
+	giveaway.Code.String = code
+	giveaway.Code.Valid = true
+	giveaway.WinnerId.String = winner.UserId
+	giveaway.WinnerId.Valid = true
+	giveaway.WinnerName.String = winner.UserName
+	giveaway.WinnerName.Valid = true
+	_, err = DbMap.Update(&giveaway)
+	if err != nil {
+		log.Panicln(err)
 	}
 	createMissingGiveaways()
 }
 
-func getParticipantsNames(giveawayId int) ([]string, error) {
+func getParticipantsNames(giveawayId int) []string {
 	var participants []Participant
 	_, err := DbMap.Select(&participants, "SELECT user_name FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
 	if err != nil {
-		return nil, err
+		log.Panicln(err)
 	}
 	names := make([]string, len(participants))
 	for i := range participants {
 		names[i] = participants[i].UserName
 	}
-	return names, nil
+	return names
 }
 
 func getParticipantByMessageId(messageId string) *Participant {
 	var participant Participant
 	err := DbMap.SelectOne(&participant, "SELECT * FROM Participants WHERE message_id = ?", messageId)
 	if err != nil {
-		log.Println(err)
+		log.Panicln(err)
 		return nil
 	}
 	return &participant
 }
 
 func getParticipantsNamesString(giveawayId int) string {
-	participants, err := getParticipantsNames(giveawayId)
-	if err != nil {
-		log.Println(err)
-		return ""
-	}
+	participants := getParticipantsNames(giveawayId)
 	return strings.Join(participants, ", ")
 }
 

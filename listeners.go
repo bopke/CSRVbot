@@ -36,9 +36,9 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			participant.IsAccepted.Bool = false
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, reject)
 		}
-		_, err := DbMap.Update(&participant)
+		_, err := DbMap.Update(participant)
 		if err != nil {
-			log.Println(err)
+			log.Panicln(err)
 		}
 		return
 	} else {
@@ -112,7 +112,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		err = DbMap.Insert(&participant)
 		if err != nil {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
-			log.Println(err)
+			log.Panicln(err)
 		}
 		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅")
 		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔")
@@ -142,7 +142,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
-				finishGiveaways()
+				finishGiveaway(m.GuildID)
 				return
 			case "delete":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
