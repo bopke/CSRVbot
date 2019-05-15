@@ -63,12 +63,9 @@ func loadConfig() (c Config) {
 }
 
 func InitLog() {
-	file, err := os.OpenFile("csrvbot.log", os.O_APPEND, 0644)
+	file, err := os.OpenFile("csrvbot.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		file, err = os.OpenFile("csrvbot.log", os.O_CREATE, 0644)
-		if err != nil {
-			log.Panic(err)
-		}
+		log.Panic(err)
 	}
 	log.SetOutput(file)
 }
