@@ -40,19 +40,19 @@ func loadConfig() (c Config) {
 	defer configFile.Close()
 	err = json.NewDecoder(configFile).Decode(&c)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("loadConfig Decoder.Decode(&c) " + err.Error())
 	}
 	colon := strings.Index(c.GiveawayTimeS, ":")
 	h, err := strconv.Atoi(c.GiveawayTimeS[:colon])
 	if err != nil {
-		log.Panic(err)
+		log.Panic("loadConfig strconv.Atoi(" + c.GiveawayTimeS[:colon] + ") " + err.Error())
 	}
 	if h > 23 || h < 0 {
 		panic("Hour must be greater or equal 0 and less than 24!")
 	}
 	m, err := strconv.Atoi(c.GiveawayTimeS[colon+1:])
 	if err != nil {
-		log.Panic(err)
+		log.Panic("loadConfig strconv.Atoi(" + c.GiveawayTimeS[colon+1:] + ") " + err.Error())
 	}
 	if m > 59 || m < 0 {
 		log.Panic("Minutes must be greater or equal 0 and less than 60!")
@@ -65,7 +65,7 @@ func loadConfig() (c Config) {
 func InitLog() {
 	file, err := os.OpenFile("csrvbot.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 	log.SetOutput(file)
 }
@@ -77,14 +77,14 @@ func main() {
 	var err error
 	session, err = discordgo.New("Bot " + config.SystemToken)
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 
 	session.AddHandler(OnMessageCreate)
 	session.AddHandler(OnMessageReactionAdd)
 	err = session.Open()
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 	createMissingGiveaways()
 
@@ -99,7 +99,7 @@ func main() {
 	log.Println("Przyjąłem polecenie wyłączenia")
 	err = session.Close()
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 }
 
@@ -116,7 +116,8 @@ func printServerInfo(channelID, guildID string) *discordgo.Message {
 	}
 	guild, err := session.Guild(guildID)
 	if err != nil {
-		log.Println(err)
+		log.Println("printServerInfo session.Guild(" + guildID + ") " + err.Error())
+		return nil
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Region", Value: guild.Region})
@@ -126,7 +127,7 @@ func printServerInfo(channelID, guildID string) *discordgo.Message {
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Data utworzenia", Value: createTime.Format(time.RFC3339)})
 	msg, err := session.ChannelMessageSendEmbed(channelID, &embed)
 	if err != nil {
-		log.Println(err)
+		log.Println("printServerInfo session.ChannelMessageSendEmbed(" + channelID + ", embed) " + err.Error())
 	}
 	return msg
 }
@@ -140,10 +141,7 @@ func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 		"Uczestnicy: " +
 		getParticipantsNamesString(getGiveawayForGuild(guildID).Id) +
 		"\n\nNagrody rozdajemy o 19:00, Powodzenia!"
-	m, err := session.ChannelMessageSend(channelID, info)
-	if err != nil {
-		log.Println(err)
-	}
+	m, _ := session.ChannelMessageSend(channelID, info)
 	return m
 }
 
@@ -155,7 +153,7 @@ func getCSRVCode() (string, error) {
 	req.SetBasicAuth("csrvbot", config.CsrvSecret)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Println(err)
+		log.Println("getCSRVCode http.DefaultClient.Do(req) " + err.Error())
 		return "", err
 	}
 	defer resp.Body.Close()

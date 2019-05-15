@@ -49,7 +49,7 @@ var DbMap gorp.DbMap
 func InitDB() {
 	db, err := sql.Open("mysql", config.MysqlString)
 	if err != nil {
-		log.Panic(err)
+		log.Panic("InitDB sql.Open(\"mysql\", " + config.MysqlString + ") " + err.Error())
 	}
 	DbMap = gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{"InnoDB", "UTF8MB4"}}
 
@@ -59,6 +59,6 @@ func InitDB() {
 
 	err = DbMap.CreateTablesIfNotExists()
 	if err != nil {
-		log.Panic(err)
+		log.Panic("InitDB DbMap.CreateTablesIfNotExists() " + err.Error())
 	}
 }

@@ -18,7 +18,7 @@ const (
 func isThxMessage(messageID string) bool {
 	ret, err := DbMap.SelectInt("SELECT count(*) FROM Participants WHERE message_id = ?", messageID)
 	if err != nil {
-		log.Panicln(err)
+		log.Panicln("isThxMessage DbMap.SelectInt " + err.Error())
 	}
 	if ret == 1 {
 		return true
@@ -60,13 +60,13 @@ func updateThxInfoMessage(messageId *string, channelId, participantId string, gi
 	if messageId != nil {
 		message, err = session.ChannelMessageEditEmbed(channelId, *messageId, &embed)
 		if err != nil {
-			log.Println(err)
+			log.Println("updateThxInfoMessage session.ChannelMessageEditEmbed(" + channelId + ", " + *messageId + ", embed) " + err.Error())
 			return nil
 		}
 	} else {
 		message, err = session.ChannelMessageSendEmbed(channelId, &embed)
 		if err != nil {
-			log.Println(err)
+			log.Println("updateThxInfoMessage session.ChannelMessageEditEmbed(" + channelId + ", nil, embed) " + err.Error())
 			return nil
 		}
 	}

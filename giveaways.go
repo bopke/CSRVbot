@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"math/rand"
 	"strings"
@@ -12,8 +13,10 @@ import (
 func getGiveawayForGuild(guildId string) *Giveaway {
 	var giveaway Giveaway
 	err := DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guild_id = ? AND end_time IS NULL", guildId)
-	if err != nil {
-		log.Panicln(err)
+	if err != nil && err != sql.ErrNoRows {
+		log.Panicln("getGiveawayaForGuild DbMap.SelectOne " + err.Error())
+	}
+	if err == sql.ErrNoRows {
 		return nil
 	}
 	return &giveaway
@@ -23,7 +26,7 @@ func getAllUnfinishedGiveaways() []Giveaway {
 	var res []Giveaway
 	_, err := DbMap.Select(&res, "SELECT * FROM Giveaways WHERE end_time IS NULL")
 	if err != nil {
-		log.Panicln(err)
+		log.Panicln("getAllUnfinishedGiveaways DbMap.Select " + err.Error())
 		return nil
 	}
 	return res
@@ -44,7 +47,7 @@ func createMissingGiveaways() {
 					}
 					err := DbMap.Insert(giveaway)
 					if err != nil {
-						log.Panicln(err)
+						log.Panicln("createMissingGiveaways DbMap.Insert " + err.Error())
 					}
 				}
 				break
@@ -58,6 +61,7 @@ func finishGiveaways() {
 	for _, giveaway := range giveaways {
 		finishGiveaway(giveaway.GuildId)
 	}
+	createMissingGiveaways()
 }
 
 func finishGiveaway(guildID string) {
@@ -70,25 +74,25 @@ func finishGiveaway(guildID string) {
 			break
 		}
 	}
-	code, err := getCSRVCode()
-	if err != nil {
-		log.Println(err)
-		_, _ = session.ChannelMessageSend(giveawayChannelId, "Błąd API Craftserve, nie udało się pobrać kodu!")
-		return
-	}
 	var participants []Participant
-	_, err = DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ?", giveaway.Id)
+	_, err := DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ?", giveaway.Id)
 	if err != nil {
-		log.Panicln(err)
+		log.Panicln("finishGiveaway DbMap.Select " + err.Error())
 	}
 	if participants == nil || len(participants) == 0 {
 		giveaway.EndTime.Time = time.Now()
 		giveaway.EndTime.Valid = true
-		_, err := DbMap.Update(&giveaway)
+		_, err := DbMap.Update(giveaway)
 		if err != nil {
-			log.Panicln(err)
+			log.Panicln("finishGiveaway DbMap.Select " + err.Error())
 		}
 		notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
+		return
+	}
+	code, err := getCSRVCode()
+	if err != nil {
+		log.Println("finishGiveaway getCSRVCode " + err.Error())
+		_, _ = session.ChannelMessageSend(giveawayChannelId, "Błąd API Craftserve, nie udało się pobrać kodu!")
 		return
 	}
 	rand.Seed(time.Now().UnixNano())
@@ -103,21 +107,20 @@ func finishGiveaway(guildID string) {
 	giveaway.WinnerId.Valid = true
 	giveaway.WinnerName.String = winner.UserName
 	giveaway.WinnerName.Valid = true
-	_, err = DbMap.Update(&giveaway)
+	_, err = DbMap.Update(giveaway)
 	if err != nil {
-		log.Panicln(err)
+		log.Panicln("finishGiveaway DbMap.Update " + err.Error())
 	}
-	createMissingGiveaways()
 }
 
 func getParticipantsNames(giveawayId int) []string {
 	var participants []Participant
 	_, err := DbMap.Select(&participants, "SELECT user_name FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
+		if err == sql.ErrNoRows {
 			return nil
 		}
-		log.Panicln(err)
+		log.Panicln("getParticipantsNames DbMap.Select " + err.Error())
 	}
 	names := make([]string, len(participants))
 	for i := range participants {
@@ -129,8 +132,10 @@ func getParticipantsNames(giveawayId int) []string {
 func getParticipantByMessageId(messageId string) *Participant {
 	var participant Participant
 	err := DbMap.SelectOne(&participant, "SELECT * FROM Participants WHERE message_id = ?", messageId)
-	if err != nil {
-		log.Panicln(err)
+	if err != nil && err != sql.ErrNoRows {
+		log.Panicln("getParticipantByMessageId DbMap.SelectOne " + err.Error())
+	}
+	if err == sql.ErrNoRows {
 		return nil
 	}
 	return &participant
@@ -146,22 +151,21 @@ func getParticipantsNamesString(giveawayId int) string {
 
 func notifyWinner(guildID, channelID string, winnerID *string, code string) string {
 	guild, err := session.Guild(guildID)
+	var guildName string
 	if err != nil {
-		log.Println(err)
-		guild.Name = guildID
+		log.Println("notifyWinner session.Guild(" + guildID + ") " + err.Error())
+		guildName = guildID
+	} else {
+		guildName = guild.Name
 	}
 	if winnerID == nil {
-		log.Println("Giveaway na " + guild.Name + " zakończył się bez uczestników.")
-		message, err := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
-		if err != nil {
-			log.Println(err)
-			return ""
-		}
+		log.Println("Giveaway na " + guildName + " zakończył się bez uczestników.")
+		message, _ := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
 		return message.ID
 	}
 	winner, err := session.GuildMember(guildID, *winnerID)
 	if err != nil {
-		log.Println(err)
+		log.Println("notifyWinner session.GuildMember(" + guildID + ", " + *winnerID + ") " + err.Error())
 		return ""
 	}
 	log.Println(winner.User.Username + " wygrał giveaway na " + guild.Name + ". Kod: " + code)
@@ -175,14 +179,8 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: code})
-	dm, err := session.UserChannelCreate(*winnerID)
-	if err != nil {
-		log.Println(err)
-	}
-	_, err = session.ChannelMessageSendEmbed(dm.ID, &embed)
-	if err != nil {
-		log.Println(err)
-	}
+	dm, _ := session.UserChannelCreate(*winnerID)
+	_, _ = session.ChannelMessageSendEmbed(dm.ID, &embed)
 	embed = discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -191,10 +189,7 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 		},
 		Description: winner.User.Username + " wygrał kod. Moje gratulacje ;)",
 	}
-	message, err := session.ChannelMessageSendEmbed(channelID, &embed)
-	if err != nil {
-		log.Println(err)
-	}
+	message, _ := session.ChannelMessageSendEmbed(channelID, &embed)
 	return message.ID
 }
 

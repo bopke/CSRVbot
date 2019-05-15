@@ -10,7 +10,7 @@ import (
 func getRoleID(guildID string, roleName string) (string, error) {
 	guild, err := session.Guild(guildID)
 	if err != nil {
-		log.Println(err)
+		log.Println("getRoleID session.Guild(" + guildID + ") " + err.Error())
 		return "", err
 	}
 	roles := guild.Roles
@@ -26,7 +26,7 @@ func hasRole(member *discordgo.Member, roleName, guildID string) bool {
 	//z jakiegos powodu w strukturze member GuildID jest puste...
 	adminRole, err := getRoleID(guildID, roleName)
 	if err != nil {
-		log.Println(err)
+		log.Println("hasRole getRoleID(" + guildID + ", " + roleName + ") " + err.Error())
 		return false
 	}
 	for _, role := range member.Roles {
