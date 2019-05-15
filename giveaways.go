@@ -114,6 +114,9 @@ func getParticipantsNames(giveawayId int) []string {
 	var participants []Participant
 	_, err := DbMap.Select(&participants, "SELECT user_name FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
 	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return nil
+		}
 		log.Panicln(err)
 	}
 	names := make([]string, len(participants))
@@ -135,6 +138,9 @@ func getParticipantByMessageId(messageId string) *Participant {
 
 func getParticipantsNamesString(giveawayId int) string {
 	participants := getParticipantsNames(giveawayId)
+	if participants == nil {
+		return ""
+	}
 	return strings.Join(participants, ", ")
 }
 
