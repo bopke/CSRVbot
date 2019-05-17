@@ -108,7 +108,7 @@ func printServerInfo(channelID, guildID string) *discordgo.Message {
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
 			Name:    "Informacje o serwerze",
-			IconURL: "https://images-ext-1.discordapp.net/external/OmO5hbzkaQiEXaEF7S9z1AXSop-hks2K7QgmOtTsQO0/https/akimg0.ask.fm/assets2/067/455/391/744/normal/10378269_696841953685468_93044818520950595_n.png",
+			IconURL: "https://cdn.discordapp.com/avatars/524308413719642118/c2a17b4479bfcc89d2b7e64e6ae15ebe.webp",
 		},
 		Description: "ID:" + guildID,
 		Color:       0x234d20,
