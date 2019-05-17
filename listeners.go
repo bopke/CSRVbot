@@ -136,6 +136,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				printServerInfo(m.ChannelID, m.GuildID)
+				return
 			case "start":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
 				if err != nil {

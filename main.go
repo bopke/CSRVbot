@@ -121,10 +121,10 @@ func printServerInfo(channelID, guildID string) *discordgo.Message {
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Region", Value: guild.Region})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Kanały", Value: string(len(guild.Channels)) + " kanałów"})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Kanały", Value: fmt.Sprintf("%d kanałów", guild.Channels)})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: fmt.Sprintf("Użytkowników [%d]", guild.MemberCount), Value: "Wielu"})
 	createTime, _ := guild.JoinedAt.Parse()
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Data utworzenia", Value: createTime.Format(time.RFC3339)})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Data utworzenia", Value: createTime.Format(time.RFC1123)})
 	msg, err := session.ChannelMessageSendEmbed(channelID, &embed)
 	if err != nil {
 		log.Println("printServerInfo session.ChannelMessageSendEmbed(" + channelID + ", embed) " + err.Error())
@@ -141,7 +141,17 @@ func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 		"Uczestnicy: " +
 		getParticipantsNamesString(getGiveawayForGuild(guildID).Id) +
 		"\n\nNagrody rozdajemy o 19:00, Powodzenia!"
-	m, _ := session.ChannelMessageSend(channelID, info)
+	embed := &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://craftserve.pl",
+			Name:    "Informacje o serwerze",
+			IconURL: "https://cdn.discordapp.com/avatars/524308413719642118/c2a17b4479bfcc89d2b7e64e6ae15ebe.webp",
+		},
+		Description: info,
+		Color:       0x234d20,
+		Timestamp:   time.Now().Format(time.RFC3339),
+	}
+	m, _ := session.ChannelMessageSendEmbed(channelID, embed)
 	return m
 }
 
