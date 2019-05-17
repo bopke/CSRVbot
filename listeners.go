@@ -113,7 +113,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		participant.GuildName = guild.Name
 		participant.UserName = user.Username
 		participant.MessageId = *updateThxInfoMessage(nil, m.ChannelID, args[1], participant.GiveawayId, wait)
-		err = DbMap.Insert(&participant)
+		err = DbMap.Insert(participant)
 		if err != nil {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
 			log.Panicln("OnMessageCreate DbMap.Insert(participant) " + err.Error())
@@ -208,4 +208,9 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		_, _ = s.ChannelMessageSend(m.ChannelID, ":ok_hand:")
 	}
+}
+
+func OnGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
+	log.Printf("Zarejestrowałem utworzenie gildii")
+	createMissingGiveaways()
 }

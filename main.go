@@ -71,7 +71,7 @@ func InitLog() {
 }
 
 func main() {
-	InitLog()
+	//	InitLog()
 	config = loadConfig()
 	InitDB()
 	var err error
@@ -82,11 +82,11 @@ func main() {
 
 	session.AddHandler(OnMessageCreate)
 	session.AddHandler(OnMessageReactionAdd)
+	session.AddHandler(OnGuildCreate)
 	err = session.Open()
 	if err != nil {
 		panic(err)
 	}
-	createMissingGiveaways()
 
 	c := cron.New()
 	_ = c.AddFunc(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH), finishGiveaways)
