@@ -140,7 +140,7 @@ func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
 		"Uczestnicy: " +
 		getParticipantsNamesString(getGiveawayForGuild(guildID).Id) +
-		"\n\nNagrody rozdajemy o 19:00, Powodzenia!"
+		"\n\nNagrody rozdajemy o " + config.GiveawayTimeS + ", Powodzenia!"
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",

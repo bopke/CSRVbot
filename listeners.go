@@ -19,6 +19,20 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
 	if hasRole(member, config.AdminRole, r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
+		reactionists, _ := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
+		for _, user := range reactionists {
+			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
+				continue
+			}
+			_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
+		}
+		reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
+		for _, user := range reactionists {
+			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "✅") {
+				continue
+			}
+			_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
+		}
 		participant := getParticipantByMessageId(r.MessageID)
 		participant.AcceptTime.Time = time.Now()
 		participant.AcceptTime.Valid = true
@@ -197,7 +211,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				log.Println(m.Author.Username + " zblacklistował " + member.User.Username + " na " + guild.Name)
-				blacklistUser(args[2], m.GuildID)
+				_ = blacklistUser(args[2], m.GuildID, m.Author.ID)
 				return
 			}
 		}
