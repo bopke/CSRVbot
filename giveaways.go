@@ -66,7 +66,11 @@ func finishGiveaways() {
 
 func finishGiveaway(guildID string) {
 	giveaway := getGiveawayForGuild(guildID)
-	guild, _ := session.Guild(giveaway.GuildId)
+	guild, err := session.Guild(giveaway.GuildId)
+	if err != nil {
+		log.Panicln("finishGiveaway session.Guild(" + guildID + ") " + err.Error())
+		return
+	}
 	var giveawayChannelId string
 	for _, channel := range guild.Channels {
 		if channel.Name == config.MainChannel {
@@ -75,7 +79,7 @@ func finishGiveaway(guildID string) {
 		}
 	}
 	var participants []Participant
-	_, err := DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ?", giveaway.Id)
+	_, err = DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ?", giveaway.Id)
 	if err != nil {
 		log.Panicln("finishGiveaway DbMap.Select " + err.Error())
 	}
@@ -193,17 +197,37 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 	return message.ID
 }
 
-func deleteFromGiveaway(userID, guildID string) {
+func deleteFromGiveaway(guildID, userID string) {
 	//TODO: PRZYTUL BAZE
 	return
 }
 
-func blacklistUser(userID, guildID string) {
-	//TODO: PRZYTUL BAZE
-	return
+func blacklistUser(guildID, userID, blacklisterID string) error {
+	blacklist := &Blacklist{GuildId: guildID,
+		UserId:        userID,
+		BlacklisterId: blacklisterID}
+	err := DbMap.Insert(blacklist)
+	if err != nil {
+		log.Panicln("blacklistUser DbMap.Isert(blacklist)" + err.Error())
+	}
+	return err
 }
 
-func isBlacklisted(userID, guildID string) bool {
-	//TODO: PRZYTUL BAZE
+func unblacklistUser(guildID, userID string) error {
+	_, err := DbMap.Exec("DELETE FROM Blacklists WHERE guild_id = ? AND user_id = ?", guildID, userID)
+	if err != nil {
+		log.Panicln("unblacklistUser DbMap.Exec" + err.Error())
+	}
+	return err
+}
+
+func isBlacklisted(guildID, userID string) bool {
+	ret, err := DbMap.SelectInt("SELECT count(*) FROM Blacklists WHERE guild_id = ? AND user_id = ?", guildID, userID)
+	if err != nil {
+		log.Panicln("isBlacklisted DbMap.SelectInt " + err.Error())
+	}
+	if ret == 1 {
+		return true
+	}
 	return false
 }
