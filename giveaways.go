@@ -68,7 +68,7 @@ func finishGiveaway(guildID string) {
 	giveaway := getGiveawayForGuild(guildID)
 	guild, err := session.Guild(giveaway.GuildId)
 	if err != nil {
-		log.Panicln("finishGiveaway session.Guild(" + guildID + ") " + err.Error())
+		log.Println("Nie mogę się dobrać do gildii o ID " + guildID + ", pomijam.")
 		return
 	}
 	var giveawayChannelId string
