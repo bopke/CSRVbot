@@ -79,7 +79,7 @@ func finishGiveaway(guildID string) {
 		}
 	}
 	var participants []Participant
-	_, err = DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ?", giveaway.Id)
+	_, err = DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveaway.Id)
 	if err != nil {
 		log.Panicln("finishGiveaway DbMap.Select " + err.Error())
 	}
