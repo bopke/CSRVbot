@@ -78,13 +78,13 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	if m.Content == "!" {
+		return
+	}
 	// remove prefix
 	m.Content = m.Content[1:]
 
 	args := strings.Fields(m.Content)
-	if len(args) < 1 {
-		return
-	}
 	switch args[0] {
 	case "thx":
 		if len(args) != 2 {
