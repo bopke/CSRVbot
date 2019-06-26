@@ -135,8 +135,10 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
 			log.Panicln("OnMessageCreate DbMap.Insert(participant) " + err.Error())
 		}
-		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅")
-		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔")
+		for err = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅"); err != nil; err = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅") {
+		}
+		for err = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔"); err != nil; err = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔") {
+		}
 	case "giveaway":
 		printGiveawayInfo(m.ChannelID, m.GuildID)
 	case "csrvbot":
