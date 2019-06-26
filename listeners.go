@@ -195,7 +195,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					}
 					log.Println(m.Author.Username + " usunął ID " + args[2] + " z giveawaya na " + guild.Name)
 					deleteFromGiveaway(m.GuildID, args[2])
-					_, _ = s.ChannelMessageSend(m.ChannelID, "Usunięto.")
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Usunięto z giveawaya.")
 					return
 				}
 				if err != nil {
@@ -205,7 +205,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 				log.Println(m.Author.Username + " usunął " + m.Mentions[0].Username + " z giveawaya na " + guild.Name)
 				deleteFromGiveaway(m.GuildID, m.Mentions[0].ID)
-				_, _ = s.ChannelMessageSend(m.ChannelID, "Usunięto.")
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Usunięto z giveawaya.")
 				return
 			case "blacklist":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
@@ -230,7 +230,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					}
 					log.Println(m.Author.Username + " zblacklistował ID " + args[2] + " na " + guild.Name)
 					if blacklistUser(m.GuildID, args[2], m.Author.ID) == nil {
-						_, _ = s.ChannelMessageSend(m.ChannelID, "Zblacklistowano.")
+						_, _ = s.ChannelMessageSend(m.ChannelID, "Użytkownik został zablokowany z możliwości udziału w giveaway.")
 					}
 					return
 				}
@@ -241,7 +241,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 				log.Println(m.Author.Username + " zblacklistował " + m.Mentions[0].Username + " na " + guild.Name)
 				if blacklistUser(m.GuildID, m.Mentions[0].ID, m.Author.ID) == nil {
-					_, _ = s.ChannelMessageSend(m.ChannelID, "Zblacklistowano.")
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Użytkownik został zablokowany z możliwości udziału w giveaway.")
 				}
 				return
 			case "unblacklist":
@@ -267,7 +267,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					}
 					log.Println(m.Author.Username + " odblacklistował ID " + args[2] + " na " + guild.Name)
 					if unblacklistUser(m.GuildID, args[2]) == nil {
-						_, _ = s.ChannelMessageSend(m.ChannelID, "Odblacklistowano.")
+						_, _ = s.ChannelMessageSend(m.ChannelID, "Użytkownik ponownie może brać udział w giveawayach.")
 					}
 					return
 				}
@@ -278,7 +278,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 				log.Println(m.Author.Username + " odblacklistował " + m.Mentions[0].Username + " na " + guild.Name)
 				if unblacklistUser(m.GuildID, m.Mentions[0].ID) == nil {
-					_, _ = s.ChannelMessageSend(m.ChannelID, "Odblacklistowano.")
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Użytkownik ponownie może brać udział w giveawayach.")
 				}
 				return
 			}
