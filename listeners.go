@@ -187,13 +187,25 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				guild, err := session.Guild(m.GuildID)
+				if len(m.Mentions) < 1 {
+					if err != nil {
+						log.Println(m.Author.Username + " usunął ID " + args[2] + " z giveawaya na " + m.GuildID)
+						log.Println(err)
+						return
+					}
+					log.Println(m.Author.Username + " usunął ID " + args[2] + " z giveawaya na " + guild.Name)
+					deleteFromGiveaway(m.GuildID, args[2])
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Usunięto.")
+					return
+				}
 				if err != nil {
-					log.Println(m.Author.Username + " usunął " + member.User.Username + " z giveawaya na " + m.GuildID)
+					log.Println(m.Author.Username + " usunął " + m.Mentions[0].Username + " z giveawaya na " + m.GuildID)
 					log.Println(err)
 					return
 				}
-				log.Println(m.Author.Username + " usunął " + member.User.Username + " z giveawaya na " + guild.Name)
-				deleteFromGiveaway(args[2], m.GuildID)
+				log.Println(m.Author.Username + " usunął " + m.Mentions[0].Username + " z giveawaya na " + guild.Name)
+				deleteFromGiveaway(m.GuildID, m.Mentions[0].ID)
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Usunięto.")
 				return
 			case "blacklist":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)

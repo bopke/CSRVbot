@@ -145,6 +145,18 @@ func getParticipantByMessageId(messageId string) *Participant {
 	return &participant
 }
 
+func getParticipantsByGiveawayId(giveawayId int) []Participant {
+	var participants []Participant
+	_, err := DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		log.Panicln("getParticipantsByGiveawayId DbMap.Select " + err.Error())
+	}
+	return participants
+}
+
 func getParticipantsNamesString(giveawayId int) string {
 	participants := getParticipantsNames(giveawayId)
 	if participants == nil {
@@ -198,7 +210,21 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 }
 
 func deleteFromGiveaway(guildID, userID string) {
-	//TODO: PRZYTUL BAZE
+	giveawayId := getGiveawayForGuild(guildID).Id
+	participants := getParticipantsByGiveawayId(giveawayId)
+	for _, participant := range participants {
+		if participant.UserId == userID {
+			participant.IsAccepted.Valid = true
+			participant.IsAccepted.Bool = false
+			_, err := DbMap.Update(&participant)
+			if err != nil {
+				log.Panicln(err)
+			}
+		}
+	}
+	for _, participant := range participants {
+		updateThxInfoMessage(&participant.MessageId, participant.ChannelId, participant.UserId, participant.GiveawayId, reject)
+	}
 	return
 }
 
