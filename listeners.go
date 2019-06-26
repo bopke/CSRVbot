@@ -116,7 +116,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można dziękować botom!")
 			return
 		}
-		if isBlacklisted(args[1], m.GuildID) {
+		if isBlacklisted(m.GuildID, m.Mentions[0].ID) {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Ten użytkownik jest na czarnej liście i nie może brać udziału :(")
 			return
 		}
@@ -142,7 +142,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "giveaway":
 		printGiveawayInfo(m.ChannelID, m.GuildID)
 	case "csrvbot":
-		if len(args) == 2 {
+		if len(args) >= 2 {
 			switch args[1] {
 			case "info":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
@@ -206,21 +206,72 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				if len(args) == 2 {
-					_, _ = s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Musisz podać użytkownika!")
 					return
 				}
 				guild, err := session.Guild(m.GuildID)
+				if len(m.Mentions) < 1 {
+					if err != nil {
+						log.Println(m.Author.Username + " zblacklistował ID " + args[2] + " na " + m.GuildID)
+						log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
+						return
+					}
+					log.Println(m.Author.Username + " zblacklistował ID " + args[2] + " na " + guild.Name)
+					if blacklistUser(m.GuildID, args[2], m.Author.ID) == nil {
+						_, _ = s.ChannelMessageSend(m.ChannelID, "Zblacklistowano.")
+					}
+					return
+				}
 				if err != nil {
-					log.Println(m.Author.Username + " zblacklistował " + member.User.Username + " na " + m.GuildID)
+					log.Println(m.Author.Username + " zblacklistował " + m.Mentions[0].Username + " na " + m.GuildID)
 					log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
 					return
 				}
-				log.Println(m.Author.Username + " zblacklistował " + member.User.Username + " na " + guild.Name)
-				_ = blacklistUser(args[2], m.GuildID, m.Author.ID)
+				log.Println(m.Author.Username + " zblacklistował " + m.Mentions[0].Username + " na " + guild.Name)
+				if blacklistUser(m.GuildID, m.Mentions[0].ID, m.Author.ID) == nil {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Zblacklistowano.")
+				}
+				return
+			case "unblacklist":
+				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+				if err != nil {
+					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
+					return
+				}
+				if !hasRole(member, config.AdminRole, m.GuildID) {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+					return
+				}
+				if len(args) == 2 {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Musisz podać użytkownika!")
+					return
+				}
+				guild, err := session.Guild(m.GuildID)
+				if len(m.Mentions) < 1 {
+					if err != nil {
+						log.Println(m.Author.Username + " odblacklistował ID " + args[2] + " na " + m.GuildID)
+						log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
+						return
+					}
+					log.Println(m.Author.Username + " odblacklistował ID " + args[2] + " na " + guild.Name)
+					if unblacklistUser(m.GuildID, args[2]) == nil {
+						_, _ = s.ChannelMessageSend(m.ChannelID, "Odblacklistowano.")
+					}
+					return
+				}
+				if err != nil {
+					log.Println(m.Author.Username + " odblacklistował " + m.Mentions[0].Username + " na " + m.GuildID)
+					log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
+					return
+				}
+				log.Println(m.Author.Username + " odblacklistował " + m.Mentions[0].Username + " na " + guild.Name)
+				if unblacklistUser(m.GuildID, m.Mentions[0].ID) == nil {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Odblacklistowano.")
+				}
 				return
 			}
 		}
-		_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|info>")
+		_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|unblacklist|info>")
 	case "setwinner":
 		if len(args) == 1 {
 			_, _ = s.ChannelMessageSend(m.ChannelID, "Na kogo ustawiamy?")
