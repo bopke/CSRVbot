@@ -144,7 +144,7 @@ func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
-			Name:    "Informacje o serwerze",
+			Name:    "Informacje o Giveawayu",
 			IconURL: "https://cdn.discordapp.com/avatars/524308413719642118/c2a17b4479bfcc89d2b7e64e6ae15ebe.webp",
 		},
 		Description: info,
