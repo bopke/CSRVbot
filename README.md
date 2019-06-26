@@ -1,3 +1,3 @@
 CSRVbot
 ---
-kiedyś może napiszę tu coś mądrego
+bot napisany dla Craftserve
