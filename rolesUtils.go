@@ -36,3 +36,13 @@ func hasRole(member *discordgo.Member, roleName, guildID string) bool {
 	}
 	return false
 }
+
+func getAdminRoleForGuild(guildID string) string {
+	var serverConfig ServerConfig
+	err := DbMap.SelectOne(serverConfig, "SELECT * FROM ServerConfig")
+	if err != nil {
+		log.Println("getAdminRoleForGuild(" + guildID + ") " + err.Error())
+		return ""
+	}
+	return serverConfig.AdminRole
+}

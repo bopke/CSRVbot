@@ -37,7 +37,7 @@ func createMissingGiveaways() {
 		// Jak się tak dziwnie nie wyciągnie gildii to nie działa
 		guild, _ := session.Guild(session.State.Guilds[i].ID)
 		for _, channel := range guild.Channels {
-			if channel.Name == config.MainChannel {
+			if channel.Name == getAdminRoleForGuild(guild.ID) {
 				giveaway := getGiveawayForGuild(guild.ID)
 				if giveaway == nil {
 					giveaway = &Giveaway{
@@ -54,6 +54,16 @@ func createMissingGiveaways() {
 			}
 		}
 	}
+}
+
+func getGiveawayChannelIdForGuild(guildID string) string {
+	var serverConfig ServerConfig
+	err := DbMap.SelectOne(serverConfig, "SELECT * FROM ServerConfig")
+	if err != nil {
+		log.Println("getAdminRoleForGuild(" + guildID + ") " + err.Error())
+		return ""
+	}
+	return serverConfig.MainChannel
 }
 
 func finishGiveaways() {
@@ -73,7 +83,7 @@ func finishGiveaway(guildID string) {
 	}
 	var giveawayChannelId string
 	for _, channel := range guild.Channels {
-		if channel.Name == config.MainChannel {
+		if channel.Name == getGiveawayChannelIdForGuild(guildID) {
 			giveawayChannelId = channel.ID
 			break
 		}

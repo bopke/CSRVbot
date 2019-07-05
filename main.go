@@ -17,15 +17,12 @@ import (
 )
 
 type Config struct {
-	MysqlString     string `json:"mysql_string"`
-	MainChannel     string `json:"main_channel"`
-	BlacklistedRole string `json:"blacklisted_role"`
-	AdminRole       string `json:"admin_role"`
-	GiveawayTimeS   string `json:"giveaway_time"`
-	GiveawayTimeH   int    `json:"-"`
-	GiveawayTimeM   int    `json:"-"`
-	SystemToken     string `json:"system_token"`
-	CsrvSecret      string `json:"csrv_secret"`
+	MysqlString   string `json:"mysql_string"`
+	GiveawayTimeS string `json:"giveaway_time"`
+	GiveawayTimeH int    `json:"-"`
+	GiveawayTimeM int    `json:"-"`
+	SystemToken   string `json:"system_token"`
+	CsrvSecret    string `json:"csrv_secret"`
 }
 
 var config Config
@@ -121,7 +118,7 @@ func printServerInfo(channelID, guildID string) *discordgo.Message {
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Region", Value: guild.Region})
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Kanały", Value: fmt.Sprintf("%d kanałów", guild.Channels)})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Kanały", Value: fmt.Sprintf("%d kanałów", len(guild.Channels))})
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: fmt.Sprintf("Użytkowników [%d]", guild.MemberCount), Value: "Wielu"})
 	createTime, _ := guild.JoinedAt.Parse()
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Data utworzenia", Value: createTime.Format(time.RFC1123)})

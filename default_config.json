@@ -1,8 +1,5 @@
 {
   "mysql_string": "login:password@tcp(adres_bazy:port_polaczenia)/nazwa_bazy?parseTime=true",
-  "main_channel": "giveaway",
-  "blacklisted_role": "CraftserveBotBlacklisted",
-  "admin_role": "CraftserveBotAdmin",
   "giveaway_time": "19:00",
   "system_token": "token bota",
   "csrv_secret": "secret api od kodow"
