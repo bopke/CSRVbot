@@ -1,9 +1,0 @@
-{
-  "mysql_string": "csrvbot:12345@tcp(127.0.0.1:3306)/csrvbot?parseTime=true",
-  "main_channel": "giveaway",
-  "blacklisted_role": "CraftserveBotBlacklisted",
-  "admin_role": "CraftserveBotAdmin",
-  "giveaway_time": "19:00",
-  "system_token": "NTYwNzk1NTY2MjkyOTkyMDEx.D35JUg.CMaGgOij-kiwtHvWoz257VoHTVg",
-  "csrv_secret": "secret api od kodow"
-}

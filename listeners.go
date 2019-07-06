@@ -18,7 +18,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		return
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
-	if hasRole(member, config.AdminRole, r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
+	if hasRole(member, getAdminRoleForGuild(r.GuildID), r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
 		reactionists, _ := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
 		for _, user := range reactionists {
 			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
@@ -78,6 +78,9 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	if m.Content == "!" {
+		return
+	}
 	// remove prefix
 	m.Content = m.Content[1:]
 
@@ -113,7 +116,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można dziękować botom!")
 			return
 		}
-		if isBlacklisted(args[1], m.GuildID) {
+		if isBlacklisted(m.GuildID, m.Mentions[0].ID) {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Ten użytkownik jest na czarnej liście i nie może brać udziału :(")
 			return
 		}
@@ -132,12 +135,14 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
 			log.Panicln("OnMessageCreate DbMap.Insert(participant) " + err.Error())
 		}
-		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅")
-		_ = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔")
+		for err = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅"); err != nil; err = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "✅") {
+		}
+		for err = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔"); err != nil; err = session.MessageReactionAdd(m.ChannelID, participant.MessageId, "⛔") {
+		}
 	case "giveaway":
 		printGiveawayInfo(m.ChannelID, m.GuildID)
 	case "csrvbot":
-		if len(args) == 2 {
+		if len(args) >= 2 {
 			switch args[1] {
 			case "info":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
@@ -145,7 +150,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
 					return
 				}
-				if !hasRole(member, config.AdminRole, m.GuildID) {
+				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
@@ -157,7 +162,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
 					return
 				}
-				if !hasRole(member, config.AdminRole, m.GuildID) {
+				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
@@ -170,7 +175,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
 					return
 				}
-				if !hasRole(member, config.AdminRole, m.GuildID) {
+				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
@@ -182,13 +187,25 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				guild, err := session.Guild(m.GuildID)
+				if len(m.Mentions) < 1 {
+					if err != nil {
+						log.Println(m.Author.Username + " usunął ID " + args[2] + " z giveawaya na " + m.GuildID)
+						log.Println(err)
+						return
+					}
+					log.Println(m.Author.Username + " usunął ID " + args[2] + " z giveawaya na " + guild.Name)
+					deleteFromGiveaway(m.GuildID, args[2])
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Usunięto z giveawaya.")
+					return
+				}
 				if err != nil {
-					log.Println(m.Author.Username + " usunął " + member.User.Username + " z giveawaya na " + m.GuildID)
+					log.Println(m.Author.Username + " usunął " + m.Mentions[0].Username + " z giveawaya na " + m.GuildID)
 					log.Println(err)
 					return
 				}
-				log.Println(m.Author.Username + " usunął " + member.User.Username + " z giveawaya na " + guild.Name)
-				deleteFromGiveaway(args[2], m.GuildID)
+				log.Println(m.Author.Username + " usunął " + m.Mentions[0].Username + " z giveawaya na " + guild.Name)
+				deleteFromGiveaway(m.GuildID, m.Mentions[0].ID)
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Usunięto z giveawaya.")
 				return
 			case "blacklist":
 				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
@@ -196,26 +213,77 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
 					return
 				}
-				if !hasRole(member, config.AdminRole, m.GuildID) {
+				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
 				if len(args) == 2 {
-					_, _ = s.ChannelMessageSend(m.ChannelID, "Musisz podać ID użytkownika!")
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Musisz podać użytkownika!")
 					return
 				}
 				guild, err := session.Guild(m.GuildID)
+				if len(m.Mentions) < 1 {
+					if err != nil {
+						log.Println(m.Author.Username + " zblacklistował ID " + args[2] + " na " + m.GuildID)
+						log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
+						return
+					}
+					log.Println(m.Author.Username + " zblacklistował ID " + args[2] + " na " + guild.Name)
+					if blacklistUser(m.GuildID, args[2], m.Author.ID) == nil {
+						_, _ = s.ChannelMessageSend(m.ChannelID, "Użytkownik został zablokowany z możliwości udziału w giveaway.")
+					}
+					return
+				}
 				if err != nil {
-					log.Println(m.Author.Username + " zblacklistował " + member.User.Username + " na " + m.GuildID)
+					log.Println(m.Author.Username + " zblacklistował " + m.Mentions[0].Username + " na " + m.GuildID)
 					log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
 					return
 				}
-				log.Println(m.Author.Username + " zblacklistował " + member.User.Username + " na " + guild.Name)
-				_ = blacklistUser(args[2], m.GuildID, m.Author.ID)
+				log.Println(m.Author.Username + " zblacklistował " + m.Mentions[0].Username + " na " + guild.Name)
+				if blacklistUser(m.GuildID, m.Mentions[0].ID, m.Author.ID) == nil {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Użytkownik został zablokowany z możliwości udziału w giveaway.")
+				}
+				return
+			case "unblacklist":
+				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+				if err != nil {
+					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
+					return
+				}
+				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+					return
+				}
+				if len(args) == 2 {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Musisz podać użytkownika!")
+					return
+				}
+				guild, err := session.Guild(m.GuildID)
+				if len(m.Mentions) < 1 {
+					if err != nil {
+						log.Println(m.Author.Username + " odblacklistował ID " + args[2] + " na " + m.GuildID)
+						log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
+						return
+					}
+					log.Println(m.Author.Username + " odblacklistował ID " + args[2] + " na " + guild.Name)
+					if unblacklistUser(m.GuildID, args[2]) == nil {
+						_, _ = s.ChannelMessageSend(m.ChannelID, "Użytkownik ponownie może brać udział w giveawayach.")
+					}
+					return
+				}
+				if err != nil {
+					log.Println(m.Author.Username + " odblacklistował " + m.Mentions[0].Username + " na " + m.GuildID)
+					log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
+					return
+				}
+				log.Println(m.Author.Username + " odblacklistował " + m.Mentions[0].Username + " na " + guild.Name)
+				if unblacklistUser(m.GuildID, m.Mentions[0].ID) == nil {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Użytkownik ponownie może brać udział w giveawayach.")
+				}
 				return
 			}
 		}
-		_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|info>")
+		_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|unblacklist|info>")
 	case "setwinner":
 		if len(args) == 1 {
 			_, _ = s.ChannelMessageSend(m.ChannelID, "Na kogo ustawiamy?")
