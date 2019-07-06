@@ -36,10 +36,30 @@ func hasRole(member *discordgo.Member, roleName, guildID string) bool {
 	}
 	return false
 }
+func hasPermission(member *discordgo.Member, guildID string, permission int) bool {
+	for _, roleID := range member.Roles {
+		role, err := session.State.Role(guildID, roleID)
+		if err != nil {
+			log.Println("hasPermisson session.State.Role(" + guildID + ", " + roleID + ") " + err.Error())
+			return false
+		}
+		if role.Permissions&permission != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func hasAdminPermissions(member *discordgo.Member, guildID string) bool {
+	if hasRole(member, getAdminRoleForGuild(guildID), guildID) || hasPermission(member, guildID, 8) { // 8 - administrator
+		return true
+	}
+	return false
+}
 
 func getAdminRoleForGuild(guildID string) string {
 	var serverConfig ServerConfig
-	err := DbMap.SelectOne(serverConfig, "SELECT * FROM ServerConfig")
+	err := DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig")
 	if err != nil {
 		log.Println("getAdminRoleForGuild(" + guildID + ") " + err.Error())
 		return ""

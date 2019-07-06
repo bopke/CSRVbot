@@ -18,7 +18,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		return
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
-	if hasRole(member, getAdminRoleForGuild(r.GuildID), r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
+	if hasAdminPermissions(member, r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
 		reactionists, _ := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
 		for _, user := range reactionists {
 			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
@@ -150,7 +150,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
 					return
 				}
-				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
+				if !hasAdminPermissions(member, m.GuildID) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
@@ -162,7 +162,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
 					return
 				}
-				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
+				if !hasAdminPermissions(member, m.GuildID) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
@@ -175,7 +175,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
 					return
 				}
-				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
+				if !hasAdminPermissions(member, m.GuildID) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
@@ -213,7 +213,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
 					return
 				}
-				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
+				if !hasAdminPermissions(member, m.GuildID) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
@@ -250,7 +250,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
 					return
 				}
-				if !hasRole(member, getAdminRoleForGuild(m.GuildID), m.GuildID) {
+				if !hasAdminPermissions(member, m.GuildID) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
 					return
 				}
@@ -281,9 +281,59 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					_, _ = s.ChannelMessageSend(m.ChannelID, "Użytkownik ponownie może brać udział w giveawayach.")
 				}
 				return
+			case "setGiveawayChannelName":
+				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+				if err != nil {
+					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
+					return
+				}
+				if !hasAdminPermissions(member, m.GuildID) {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+					return
+				}
+				if len(args) == 2 {
+					_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać nazwę kanału!")
+					if err != nil {
+						log.Println(err)
+					}
+					return
+				}
+				serverConfig := getServerConfigForGuildId(m.GuildID)
+				serverConfig.MainChannel = args[2]
+				_, err = DbMap.Update(&serverConfig)
+				if err != nil {
+					log.Panic("OnMessageCreate DbMap.Update(&serverConfig) " + err.Error())
+				}
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Ustawiono.")
+				return
+			case "setBotAdminRoleName":
+				member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+				if err != nil {
+					log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
+					return
+				}
+				if !hasAdminPermissions(member, m.GuildID) {
+					_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+					return
+				}
+				if len(args) == 2 {
+					_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać nazwę roli!")
+					if err != nil {
+						log.Println(err)
+					}
+					return
+				}
+				serverConfig := getServerConfigForGuildId(m.GuildID)
+				serverConfig.AdminRole = args[2]
+				_, err = DbMap.Update(&serverConfig)
+				if err != nil {
+					log.Panic("OnMessageCreate DbMap.Update(&serverConfig) " + err.Error())
+				}
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Ustawiono.")
+				return
 			}
 		}
-		_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|unblacklist|info>")
+		_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|unblacklist|setGiveawayChannelName|setBotAdminRoleName|info>")
 	case "setwinner":
 		if len(args) == 1 {
 			_, _ = s.ChannelMessageSend(m.ChannelID, "Na kogo ustawiamy?")
@@ -295,5 +345,6 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func OnGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
 	log.Printf("Zarejestrowałem utworzenie gildii")
+	createConfigurationIfNotExists(g.Guild.ID)
 	createMissingGiveaways()
 }

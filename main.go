@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -173,4 +174,26 @@ func getCSRVCode() (string, error) {
 		return "", err
 	}
 	return data.Code, nil
+}
+
+func createConfigurationIfNotExists(guildID string) {
+	var serverConfig ServerConfig
+	err := DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig")
+	if err == sql.ErrNoRows {
+		serverConfig.GuildId = guildID
+		serverConfig.MainChannel = "giveaway"
+		serverConfig.AdminRole = "CraftserveBotAdmin"
+		err = DbMap.Insert(&serverConfig)
+	}
+	if err != nil {
+		log.Panicln("createConfigurationIfNotExists DbMap.SelectOne " + err.Error())
+	}
+}
+
+func getServerConfigForGuildId(guildID string) (serverConfig ServerConfig) {
+	err := DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig")
+	if err != nil {
+		log.Panicln("createConfigurationIfNotExists DbMap.SelectOne " + err.Error())
+	}
+	return
 }

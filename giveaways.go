@@ -58,7 +58,7 @@ func createMissingGiveaways() {
 
 func getGiveawayChannelIdForGuild(guildID string) string {
 	var serverConfig ServerConfig
-	err := DbMap.SelectOne(serverConfig, "SELECT * FROM ServerConfig")
+	err := DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig")
 	if err != nil {
 		log.Println("getAdminRoleForGuild(" + guildID + ") " + err.Error())
 		return ""
