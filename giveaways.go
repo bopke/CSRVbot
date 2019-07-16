@@ -37,7 +37,7 @@ func createMissingGiveaways() {
 		// Jak się tak dziwnie nie wyciągnie gildii to nie działa
 		guild, _ := session.Guild(session.State.Guilds[i].ID)
 		for _, channel := range guild.Channels {
-			if channel.Name == getAdminRoleForGuild(guild.ID) {
+			if channel.Name == getGiveawayChannelIdForGuild(guild.ID) {
 				giveaway := getGiveawayForGuild(guild.ID)
 				if giveaway == nil {
 					giveaway = &Giveaway{
