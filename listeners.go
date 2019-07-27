@@ -48,7 +48,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			if err != nil {
 				log.Panicln(err)
 			}
-			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, confirm)
+			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, confirm, member.User.ID)
 		} else if r.Emoji.Name == "⛔" {
 			log.Println(member.User.Username + "(" + member.User.ID + ") odrzucił udział " + participant.UserName + "(" + participant.UserId + ") w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = false
@@ -56,7 +56,7 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			if err != nil {
 				log.Panicln("OnMessageReactionAdd DbMap.Update(participant) " + err.Error())
 			}
-			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, reject)
+			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, reject, member.User.ID)
 		}
 		return
 	} else {

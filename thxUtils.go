@@ -26,7 +26,7 @@ func isThxMessage(messageID string) bool {
 	return false
 }
 
-func updateThxInfoMessage(messageId *string, channelId, participantId string, giveawayId int, state State) *string {
+func updateThxInfoMessage(messageId *string, channelId, participantId string, giveawayId int, state State, adminId string) *string {
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -55,6 +55,7 @@ func updateThxInfoMessage(messageId *string, channelId, participantId string, gi
 		status = "Odrzucono"
 	}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Status", Value: status, Inline: true})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Ogarniający", Value: "<@" + adminId + ">", Inline: true})
 	var message *discordgo.Message
 	var err error
 	if messageId != nil {
