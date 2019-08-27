@@ -26,7 +26,7 @@ func isThxMessage(messageID string) bool {
 	return false
 }
 
-func updateThxInfoMessage(messageId *string, channelId, participantId string, giveawayId int, state State) *string {
+func updateThxInfoMessage(messageId *string, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -45,13 +45,19 @@ func updateThxInfoMessage(messageId *string, channelId, participantId string, gi
 	}
 	embed.Color = 0x234d20
 	embed.Fields = []*discordgo.MessageEmbedField{}
-	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Added", Value: "<@" + participantId + ">", Inline: true})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Dodany", Value: "<@" + participantId + ">", Inline: true})
 	var status string
 	if state == wait {
 		status = "Oczekiwanie"
 	} else if state == confirm {
+		if confirmerId != nil {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Potwierdzający", Value: "<@" + *confirmerId + ">", Inline: true})
+		}
 		status = "Potwierdzono"
 	} else if state == reject {
+		if confirmerId != nil {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Odrzucający", Value: "<@" + *confirmerId + ">", Inline: true})
+		}
 		status = "Odrzucono"
 	}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Status", Value: status, Inline: true})

@@ -233,7 +233,7 @@ func deleteFromGiveaway(guildID, userID string) {
 		}
 	}
 	for _, participant := range participants {
-		updateThxInfoMessage(&participant.MessageId, participant.ChannelId, participant.UserId, participant.GiveawayId, reject)
+		updateThxInfoMessage(&participant.MessageId, participant.ChannelId, participant.UserId, participant.GiveawayId, nil, reject)
 	}
 	return
 }
