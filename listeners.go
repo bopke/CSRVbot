@@ -339,6 +339,7 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				dm, _ := session.UserChannelCreate(m.Message.Author.ID)
 				_, _ = session.ChannelMessageSendEmbed(dm.ID, embed)
 				_, _ = s.ChannelMessageSend(m.ChannelID, "Prosze więcej nie blokować wiadomości :angry:")
+				log.Println("Wysłano resend do " + m.Author.Username + "#" + m.Author.Discriminator)
 				return
 			}
 		}
