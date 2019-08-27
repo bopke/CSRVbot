@@ -176,6 +176,26 @@ func getCSRVCode() (string, error) {
 	return data.Code, nil
 }
 
+func generateResendEmbed(userId string) (embed *discordgo.MessageEmbed, err error) {
+	var giveaways []Giveaway
+	_, err = DbMap.Select(&giveaways, "SELECT code FROM Giveaways WHERE winner_id=? ORDER BY id DESC LIMIT 10", userId)
+	if err != nil {
+		return
+	}
+	embed = &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://craftserve.pl",
+			Name:    "Twoje ostatnie wygrane kody",
+			IconURL: "https://cdn.discordapp.com/avatars/524308413719642118/c2a17b4479bfcc89d2b7e64e6ae15ebe.webp",
+		},
+	}
+	embed.Description = ""
+	for _, giveaway := range giveaways {
+		embed.Description += giveaway.Code.String + "\n"
+	}
+	return
+}
+
 func createConfigurationIfNotExists(guildID string) {
 	var serverConfig ServerConfig
 	err := DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig")

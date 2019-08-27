@@ -331,6 +331,15 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 				_, _ = s.ChannelMessageSend(m.ChannelID, "Ustawiono.")
 				return
+			case "resend":
+				embed, err := generateResendEmbed(m.Message.Author.ID)
+				if err != nil {
+					log.Println("OnMessageCreate generateResendEmbed(" + m.Message.Author.ID + ") " + err.Error())
+				}
+				dm, _ := session.UserChannelCreate(m.Message.Author.ID)
+				_, _ = session.ChannelMessageSendEmbed(dm.ID, embed)
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Prosze więcej nie blokować wiadomości :angry:")
+				return
 			}
 		}
 		_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|unblacklist|setGiveawayChannelName|setBotAdminRoleName|info>")
