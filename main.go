@@ -233,7 +233,7 @@ func getAllMembers(guildId string) []*discordgo.Member {
 		if len(members) != 1000 {
 			break
 		}
-		after = members[999].GuildID
+		after = members[999].User.ID
 	}
 	return allMembers
 }
