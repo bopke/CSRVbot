@@ -80,8 +80,8 @@ func getSavedRoles(guildId, memberId string) ([]string, error) {
 	return ret, nil
 }
 
-func updateMemberSavedRoles(member *discordgo.Member) {
-	savedRoles, err := getSavedRoles(member.GuildID, member.User.ID)
+func updateMemberSavedRoles(member *discordgo.Member, guildId string) {
+	savedRoles, err := getSavedRoles(guildId, member.User.ID)
 	if err != nil {
 		log.Println("updateMemberSavedRoles error getting saved roles " + err.Error())
 		return
@@ -96,37 +96,44 @@ func updateMemberSavedRoles(member *discordgo.Member) {
 			}
 		}
 		if !found {
-			memberrole := MemberRole{GuildId: member.GuildID, RoleId: memberRole, MemberId: member.User.ID}
+			memberrole := MemberRole{GuildId: guildId, RoleId: memberRole, MemberId: member.User.ID}
 			err = DbMap.Insert(&memberrole)
 			if err != nil {
-				log.Println("updateAllMembersInfo error saving new role info " + err.Error())
+				log.Println("updateAllMembersSavedRoles error saving new role info " + err.Error())
 				continue
 			}
 		}
 	}
 	for _, savedRole := range savedRoles {
 		if savedRole != "" {
-			_, err = DbMap.Exec("DELETE FROM MemberRoles WHERE guild_id = ? AND role_id = ? AND member_id = ?", member.GuildID, savedRole, member.User.ID)
+			_, err = DbMap.Exec("DELETE FROM MemberRoles WHERE guild_id = ? AND role_id = ? AND member_id = ?", guildId, savedRole, member.User.ID)
 			if err != nil {
-				log.Println("updateAllMembersInfo error deleting info about member role " + err.Error())
+				log.Println("updateAllMembersSavedRoles error deleting info about member role " + err.Error())
 				continue
 			}
 		}
 	}
 }
 
-func restoreMemberRoles(member *discordgo.Member) {
+func restoreMemberRoles(member *discordgo.Member, guildId string) {
 	var memberRoles []MemberRole
-	_, err := DbMap.Select(&memberRoles, "SELECT * FROM MemberRoles WHERE guild_id = ? AND member_id = ?", member.GuildID, member.User.ID)
+	_, err := DbMap.Select(&memberRoles, "SELECT * FROM MemberRoles WHERE guild_id = ? AND member_id = ?", guildId, member.User.ID)
 	if err != nil {
 		log.Println("restoreMemberRoles error getting saved roles " + err.Error())
 		return
 	}
 	for _, role := range memberRoles {
-		err = session.GuildMemberRoleAdd(member.GuildID, member.User.ID, role.RoleId)
+		err = session.GuildMemberRoleAdd(guildId, member.User.ID, role.RoleId)
 		if err != nil {
 			log.Println("restoreMemberRoles error restoring member role " + err.Error())
 			continue
 		}
+	}
+}
+
+func updateAllMembersSavedRoles(guildId string) {
+	guildMembers := getAllMembers(guildId)
+	for _, member := range guildMembers {
+		updateMemberSavedRoles(member, guildId)
 	}
 }

@@ -237,10 +237,3 @@ func getAllMembers(guildId string) []*discordgo.Member {
 	}
 	return allMembers
 }
-
-func updateAllMembersInfo(guildId string) {
-	guildMembers := getAllMembers(guildId)
-	for _, member := range guildMembers {
-		updateMemberSavedRoles(member)
-	}
-}
