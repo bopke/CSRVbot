@@ -357,4 +357,13 @@ func OnGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
 	log.Printf("Zarejestrowałem utworzenie gildii")
 	createConfigurationIfNotExists(g.Guild.ID)
 	createMissingGiveaways()
+	updateAllMembersInfo(g.Guild.ID)
+}
+
+func OnGuildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
+	updateMemberSavedRoles(m.Member)
+}
+
+func OnGuildMemberAdd(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
+	restoreMemberRoles(m.Member)
 }

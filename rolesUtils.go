@@ -66,3 +66,67 @@ func getAdminRoleForGuild(guildID string) string {
 	}
 	return serverConfig.AdminRole
 }
+
+func getSavedRoles(guildId, memberId string) ([]string, error) {
+	var memberRoles []MemberRole
+	_, err := DbMap.Select(&memberRoles, "SELECT * FROM MemberRoles WHERE guild_id = ? AND member_id = ?", guildId, memberId)
+	if err != nil {
+		return nil, err
+	}
+	var ret []string
+	for _, role := range memberRoles {
+		ret = append(ret, role.RoleId)
+	}
+	return ret, nil
+}
+
+func updateMemberSavedRoles(member *discordgo.Member) {
+	savedRoles, err := getSavedRoles(member.GuildID, member.User.ID)
+	if err != nil {
+		log.Println("updateMemberSavedRoles error getting saved roles " + err.Error())
+		return
+	}
+	for _, memberRole := range member.Roles {
+		found := false
+		for i, savedRole := range savedRoles {
+			if savedRole == memberRole {
+				found = true
+				savedRoles[i] = ""
+				break
+			}
+		}
+		if !found {
+			memberrole := MemberRole{GuildId: member.GuildID, RoleId: memberRole, MemberId: member.User.ID}
+			err = DbMap.Insert(&memberrole)
+			if err != nil {
+				log.Println("updateAllMembersInfo error saving new role info " + err.Error())
+				continue
+			}
+		}
+	}
+	for _, savedRole := range savedRoles {
+		if savedRole != "" {
+			_, err = DbMap.Exec("DELETE FROM MemberRoles WHERE guild_id = ? AND role_id = ? AND member_id = ?", member.GuildID, savedRole, member.User.ID)
+			if err != nil {
+				log.Println("updateAllMembersInfo error deleting info about member role " + err.Error())
+				continue
+			}
+		}
+	}
+}
+
+func restoreMemberRoles(member *discordgo.Member) {
+	var memberRoles []MemberRole
+	_, err := DbMap.Select(&memberRoles, "SELECT * FROM MemberRoles WHERE guild_id = ? AND member_id = ?", member.GuildID, member.User.ID)
+	if err != nil {
+		log.Println("restoreMemberRoles error getting saved roles " + err.Error())
+		return
+	}
+	for _, role := range memberRoles {
+		err = session.GuildMemberRoleAdd(member.GuildID, member.User.ID, role.RoleId)
+		if err != nil {
+			log.Println("restoreMemberRoles error restoring member role " + err.Error())
+			continue
+		}
+	}
+}

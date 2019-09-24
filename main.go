@@ -81,6 +81,8 @@ func main() {
 	session.AddHandler(OnMessageCreate)
 	session.AddHandler(OnMessageReactionAdd)
 	session.AddHandler(OnGuildCreate)
+	session.AddHandler(OnGuildMemberUpdate)
+	session.AddHandler(OnGuildMemberAdd)
 	err = session.Open()
 	if err != nil {
 		panic(err)
@@ -216,4 +218,29 @@ func getServerConfigForGuildId(guildID string) (serverConfig ServerConfig) {
 		log.Panicln("createConfigurationIfNotExists DbMap.SelectOne " + err.Error())
 	}
 	return
+}
+
+func getAllMembers(guildId string) []*discordgo.Member {
+	after := ""
+	var allMembers []*discordgo.Member
+	for {
+		members, err := session.GuildMembers(guildId, after, 1000)
+		if err != nil {
+			log.Println("getAllMembers Error getting nicknames " + err.Error())
+			return nil
+		}
+		allMembers = append(allMembers, members...)
+		if len(members) != 1000 {
+			break
+		}
+		after = members[999].GuildID
+	}
+	return allMembers
+}
+
+func updateAllMembersInfo(guildId string) {
+	guildMembers := getAllMembers(guildId)
+	for _, member := range guildMembers {
+		updateMemberSavedRoles(member)
+	}
 }

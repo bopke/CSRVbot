@@ -51,6 +51,13 @@ type ServerConfig struct {
 	MainChannel string `db:"main_channel,size:255"`
 }
 
+type MemberRole struct {
+	Id       int    `db:"id,primarykey,autoincrement"`
+	GuildId  string `db:"guild_id,size:255"`
+	MemberId string `db:"member_id,size:255"`
+	RoleId   string `db:"role_id,size:255"`
+}
+
 var DbMap gorp.DbMap
 
 func InitDB() {
@@ -64,6 +71,7 @@ func InitDB() {
 	DbMap.AddTableWithName(Participant{}, "Participants").SetKeys(true, "id")
 	DbMap.AddTableWithName(Blacklist{}, "Blacklists").SetKeys(true, "id")
 	DbMap.AddTableWithName(ServerConfig{}, "ServerConfig").SetKeys(true, "id")
+	DbMap.AddTableWithName(MemberRole{}, "MemberRoles").SetKeys(true, "id")
 
 	err = DbMap.CreateTablesIfNotExists()
 	if err != nil {
