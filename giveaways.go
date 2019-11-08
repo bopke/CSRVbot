@@ -175,6 +175,21 @@ func getParticipantsNamesString(giveawayId int) string {
 	return strings.Join(participants, ", ")
 }
 
+func getParticipantCandidateByMessageId(messageId string) *ParticipantCandidate {
+	var candidate ParticipantCandidate
+	err := DbMap.SelectOne(&candidate, "SELECT * From ParticipantCandidates WHERE message_id = ?", messageId)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+
+		log.Panicln("getParticipantCandidateByMessageId DbMap.Select " + err.Error())
+	}
+
+	return &candidate
+}
+
 func notifyWinner(guildID, channelID string, winnerID *string, code string) string {
 	guild, err := session.Guild(guildID)
 	var guildName string

@@ -275,3 +275,60 @@ func handleSetwinnerCommand(s *discordgo.Session, m *discordgo.MessageCreate, ar
 	}
 	_, _ = s.ChannelMessageSend(m.ChannelID, ":ok_hand:")
 }
+
+func handleThxmeCommand(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	if len(args) != 2 {
+		_, _ = s.ChannelMessageSend(m.ChannelID, "Niepoprawna ilosc argumentow")
+		return
+	}
+	match, _ := regexp.Match("<@[!]?[0-9]*>", []byte(args[1]))
+	if !match {
+		printGiveawayInfo(m.ChannelID, m.GuildID)
+		return
+	}
+	args[1] = args[1][2 : len(args[1])-1]
+	if m.Author.ID == args[1] {
+		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można poprosic o podziękowanie samego siebie!")
+		return
+	}
+	user, _ := session.User(args[1])
+	guild, err := session.Guild(m.GuildID)
+	if err != nil {
+		_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
+		log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
+		return
+	}
+	log.Println(m.Author.Username + " podziękował " + user.Username + " na " + guild.Name)
+	if user.Bot {
+		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można prosic o podziękowanie bota!")
+		return
+	}
+	if isBlacklisted(m.GuildID, m.Author.ID) {
+		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie mozesz poprosic o thx, gdyż jestes na czarnej liscie!")
+		return
+	}
+	candidate := &ParticipantCandidate{
+		CandidateName:         m.Author.Username,
+		CandidateId:           m.Author.ID,
+		CandidateApproverName: user.Username,
+		CandidateApproverId:   user.ID,
+		GuildName:             guild.Name,
+		GuildId:               m.GuildID,
+		ChannelId:             m.ChannelID,
+	}
+	messageId, err := s.ChannelMessageSend(m.ChannelID, user.Mention()+", czy chcesz podziękować użytkownikowi "+m.Author.Mention()+"?")
+	if err != nil {
+		_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu kandydata do podziekowania :(")
+		log.Panicln("OnMessageCreate ChannelMessageSend(candidate) " + err.Error())
+	}
+	candidate.MessageId = messageId.ID
+	err = DbMap.Insert(candidate)
+	if err != nil {
+		_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu kandydata do podziekowania :(")
+		log.Panicln("OnMessageCreate DbMap.Insert(candidate) " + err.Error())
+	}
+	for err = session.MessageReactionAdd(m.ChannelID, candidate.MessageId, "✅"); err != nil; err = session.MessageReactionAdd(m.ChannelID, candidate.MessageId, "✅") {
+	}
+	for err = session.MessageReactionAdd(m.ChannelID, candidate.MessageId, "⛔"); err != nil; err = session.MessageReactionAdd(m.ChannelID, candidate.MessageId, "⛔") {
+	}
+}

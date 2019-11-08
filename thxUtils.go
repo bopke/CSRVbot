@@ -26,6 +26,15 @@ func isThxMessage(messageID string) bool {
 	return false
 }
 
+func isThxmeMessage(messageID string) bool {
+	ret, err := DbMap.SelectInt("SELECT count(*) FROM ParticipantCandidates WHERE message_id = ?", messageID)
+	if err != nil {
+		log.Panicln("isThxmeMessage DbMap.SelectInt " + err.Error())
+	}
+
+	return ret == 1
+}
+
 func updateThxInfoMessage(messageId *string, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{

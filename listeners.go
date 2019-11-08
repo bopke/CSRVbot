@@ -9,7 +9,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+func HandleGiveawayReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	if !isThxMessage(r.MessageID) {
 		return
 	}
@@ -53,13 +53,90 @@ func OnMessageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			participant.IsAccepted.Bool = false
 			_, err := DbMap.Update(participant)
 			if err != nil {
-				log.Panicln("OnMessageReactionAdd DbMap.Update(participant) " + err.Error())
+				log.Panicln("HandleGiveawayReactions DbMap.Update(participant) " + err.Error())
 			}
 			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, reject)
 		}
 		return
 	} else {
 		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
+	}
+}
+
+func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+	if !isThxmeMessage(r.MessageID) {
+		return
+	}
+	if r.UserID == s.State.User.ID {
+		return
+	}
+
+	candidate := getParticipantCandidateByMessageId(r.MessageID)
+
+	if r.UserID != candidate.CandidateApproverId {
+		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
+		return
+	}
+
+	reactionists, _ := s.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
+	for _, user := range reactionists {
+		if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
+			continue
+		}
+
+		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
+	}
+	reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
+	for _, user := range reactionists {
+		if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "✅") {
+			continue
+		}
+
+		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
+	}
+
+	candidate.AcceptTime.Time = time.Now()
+	candidate.AcceptTime.Valid = true
+	candidate.IsAccepted.Valid = true
+
+	if r.Emoji.Name == "✅" {
+		if candidate.IsAccepted.Valid {
+			return
+		}
+		log.Println(candidate.CandidateApproverName + "(" + candidate.CandidateApproverId + ") zaakceptował prosbe o thx uzytkownika " + candidate.CandidateName + "(" + candidate.CandidateId + ")")
+		candidate.IsAccepted.Bool = true
+		_, err := DbMap.Update(candidate)
+		if err != nil {
+			log.Panicln("HandleGiveawayReactions DbMap.Update(participant) " + err.Error())
+		}
+
+		channelId := candidate.ChannelId
+		participant := &Participant{
+			UserId:     candidate.CandidateId,
+			UserName:   candidate.CandidateName,
+			GiveawayId: getGiveawayForGuild(candidate.GuildId).Id,
+			CreateTime: time.Now(),
+			GuildId:    candidate.GuildId,
+			GuildName:  candidate.GuildName,
+			ChannelId:  channelId,
+		}
+		participant.MessageId = *updateThxInfoMessage(nil, channelId, candidate.CandidateName, participant.GiveawayId, nil, wait)
+		err = DbMap.Insert(participant)
+		if err != nil {
+			_, _ = session.ChannelMessageSend(channelId, "Coś poszło nie tak przy dodawaniu podziękowania :(")
+			log.Panicln("OnMessageCreate DbMap.Insert(participant) " + err.Error())
+		}
+		for err = session.MessageReactionAdd(channelId, participant.MessageId, "✅"); err != nil; err = session.MessageReactionAdd(channelId, participant.MessageId, "✅") {
+		}
+		for err = session.MessageReactionAdd(channelId, participant.MessageId, "⛔"); err != nil; err = session.MessageReactionAdd(channelId, participant.MessageId, "⛔") {
+		}
+	} else if r.Emoji.Name == "⛔" {
+		log.Println(candidate.CandidateApproverName + "(" + candidate.CandidateApproverId + ") odrzucil prosbe o thx uzytkownika " + candidate.CandidateName + "(" + candidate.CandidateId + ")")
+		candidate.IsAccepted.Bool = false
+		_, err := DbMap.Update(candidate)
+		if err != nil {
+			log.Panicln("HandleGiveawayReactions DbMap.Update(participant) " + err.Error())
+		}
 	}
 }
 
@@ -87,6 +164,8 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	switch args[0] {
 	case "thx":
 		handleThxCommand(m, args)
+	case "thxme":
+		handleThxmeCommand(s, m, args)
 	case "giveaway":
 		printGiveawayInfo(m.ChannelID, m.GuildID)
 	case "csrvbot":
