@@ -79,7 +79,8 @@ func main() {
 	}
 
 	session.AddHandler(OnMessageCreate)
-	session.AddHandler(OnMessageReactionAdd)
+	session.AddHandler(HandleGiveawayReactions)
+	session.AddHandler(HandleThxmeReactions)
 	session.AddHandler(OnGuildCreate)
 	session.AddHandler(OnGuildMemberUpdate)
 	session.AddHandler(OnGuildMemberAdd)
