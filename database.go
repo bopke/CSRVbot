@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"csrvbot/config"
+
 	"github.com/go-sql-driver/mysql"
 	"gopkg.in/gorp.v2"
 )

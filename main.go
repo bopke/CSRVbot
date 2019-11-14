@@ -8,57 +8,17 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
+
+	"csrvbot/config"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/robfig/cron"
 )
 
-type Config struct {
-	MysqlString   string `json:"mysql_string"`
-	GiveawayTimeS string `json:"giveaway_time"`
-	GiveawayTimeH int    `json:"-"`
-	GiveawayTimeM int    `json:"-"`
-	SystemToken   string `json:"system_token"`
-	CsrvSecret    string `json:"csrv_secret"`
-}
-
-var config Config
-
 var session *discordgo.Session
-
-func loadConfig() (c Config) {
-	configFile, err := os.Open("config.json")
-	if err != nil {
-		log.Panic(err)
-	}
-	defer configFile.Close()
-	err = json.NewDecoder(configFile).Decode(&c)
-	if err != nil {
-		log.Panic("loadConfig Decoder.Decode(&c) " + err.Error())
-	}
-	colon := strings.Index(c.GiveawayTimeS, ":")
-	h, err := strconv.Atoi(c.GiveawayTimeS[:colon])
-	if err != nil {
-		log.Panic("loadConfig strconv.Atoi(" + c.GiveawayTimeS[:colon] + ") " + err.Error())
-	}
-	if h > 23 || h < 0 {
-		panic("Hour must be greater or equal 0 and less than 24!")
-	}
-	m, err := strconv.Atoi(c.GiveawayTimeS[colon+1:])
-	if err != nil {
-		log.Panic("loadConfig strconv.Atoi(" + c.GiveawayTimeS[colon+1:] + ") " + err.Error())
-	}
-	if m > 59 || m < 0 {
-		log.Panic("Minutes must be greater or equal 0 and less than 60!")
-	}
-	c.GiveawayTimeM = m
-	c.GiveawayTimeH = h
-	return
-}
 
 func InitLog() {
 	file, err := os.OpenFile("csrvbot.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
@@ -70,10 +30,12 @@ func InitLog() {
 
 func main() {
 	//	InitLog()
-	config = loadConfig()
+	err := config.Load()
+	if err != nil {
+		panic(err)
+	}
 	InitDB()
-	var err error
-	session, err = discordgo.New("Bot " + config.SystemToken)
+	session, err = discordgo.New("Bot " + config.DiscordToken)
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +52,7 @@ func main() {
 	}
 
 	c := cron.New()
-	_ = c.AddFunc(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH), finishGiveaways)
+	_ = c.AddFunc(config.GiveawayCronString, finishGiveaways)
 	c.Start()
 
 	log.Println("Wystartowałem")
@@ -134,6 +96,8 @@ func printServerInfo(channelID, guildID string) *discordgo.Message {
 }
 
 func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
+	splittedCronString := strings.Split(config.GiveawayCronString, " ")
+	giveawayTimeString := splittedCronString[1] + ":" + splittedCronString[2]
 	info := "**Ten bot organizuje giveaway kodów na serwery Diamond.**\n" +
 		"**Każdy kod przedłuża serwer o 7 dni.**\n" +
 		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
@@ -141,7 +105,7 @@ func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
 		"Uczestnicy: " +
 		getParticipantsNamesString(getGiveawayForGuild(guildID).Id) +
-		"\n\nNagrody rozdajemy o " + config.GiveawayTimeS + ", Powodzenia!"
+		"\n\nNagrody rozdajemy o " + giveawayTimeString + ", Powodzenia!"
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",

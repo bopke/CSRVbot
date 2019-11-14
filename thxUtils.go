@@ -1,7 +1,9 @@
 package main
 
 import (
+	"csrvbot/config"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -36,6 +38,8 @@ func isThxmeMessage(messageID string) bool {
 }
 
 func updateThxInfoMessage(messageId *string, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
+	splittedCronString := strings.Split(config.GiveawayCronString, " ")
+	giveawayTimeString := splittedCronString[1] + ":" + splittedCronString[2]
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -49,7 +53,7 @@ func updateThxInfoMessage(messageId *string, channelId, participantId string, gi
 			"Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
 			"**Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.**\n\n" +
 			"W aktualnym giveawayu są: " + getParticipantsNamesString(giveawayId) + "\n\n" +
-			"Nagrody rozdajemy o " + config.GiveawayTimeS + ", Powodzenia!",
+			"Nagrody rozdajemy o " + giveawayTimeString + ", Powodzenia!",
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
 	embed.Color = 0x234d20
