@@ -18,8 +18,6 @@ import (
 	"github.com/robfig/cron"
 )
 
-var session *discordgo.Session
-
 func InitLog() {
 	file, err := os.OpenFile("csrvbot.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -35,7 +33,7 @@ func main() {
 		panic(err)
 	}
 	InitDB()
-	session, err = discordgo.New("Bot " + config.DiscordToken)
+	session, err := discordgo.New("Bot " + config.DiscordToken)
 	if err != nil {
 		panic(err)
 	}
@@ -52,7 +50,8 @@ func main() {
 	}
 
 	c := cron.New()
-	_ = c.AddFunc(config.GiveawayCronString, finishGiveaways)
+	//broken for now
+	//_ = c.AddFunc(config.GiveawayCronString, finishGiveaways)
 	c.Start()
 
 	log.Println("Wystartowałem")
@@ -66,7 +65,7 @@ func main() {
 	}
 }
 
-func printServerInfo(channelID, guildID string) *discordgo.Message {
+func printServerInfo(session *discordgo.Session, channelID, guildID string) *discordgo.Message {
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -95,7 +94,7 @@ func printServerInfo(channelID, guildID string) *discordgo.Message {
 	return msg
 }
 
-func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
+func printGiveawayInfo(session *discordgo.Session, channelID, guildID string) *discordgo.Message {
 	splittedCronString := strings.Split(config.GiveawayCronString, " ")
 	giveawayTimeString := splittedCronString[1] + ":" + splittedCronString[2]
 	info := "**Ten bot organizuje giveaway kodów na serwery Diamond.**\n" +
@@ -185,7 +184,7 @@ func getServerConfigForGuildId(guildID string) (serverConfig ServerConfig) {
 	return
 }
 
-func getAllMembers(guildId string) []*discordgo.Member {
+func getAllMembers(session *discordgo.Session, guildId string) []*discordgo.Member {
 	after := ""
 	var allMembers []*discordgo.Member
 	for {

@@ -9,28 +9,28 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func HandleGiveawayReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+func HandleGiveawayReactions(session *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	if !isThxMessage(r.MessageID) {
 		return
 	}
-	if r.UserID == s.State.User.ID {
+	if r.UserID == session.State.User.ID {
 		return
 	}
-	member, _ := s.GuildMember(r.GuildID, r.UserID)
-	if hasAdminPermissions(member, r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
+	member, _ := session.GuildMember(r.GuildID, r.UserID)
+	if hasAdminPermissions(session, member, r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
 		reactionists, _ := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
 		for _, user := range reactionists {
 			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
 				continue
 			}
-			_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
+			_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
 		}
 		reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
 		for _, user := range reactionists {
 			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "✅") {
 				continue
 			}
-			_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
+			_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
 		}
 		participant := getParticipantByMessageId(r.MessageID)
 		participant.AcceptTime.Time = time.Now()
@@ -47,7 +47,7 @@ func HandleGiveawayReactions(s *discordgo.Session, r *discordgo.MessageReactionA
 			if err != nil {
 				log.Panicln(err)
 			}
-			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, confirm)
+			updateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, confirm)
 		} else if r.Emoji.Name == "⛔" {
 			log.Println(member.User.Username + "(" + member.User.ID + ") odrzucił udział " + participant.UserName + "(" + participant.UserId + ") w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = false
@@ -55,36 +55,36 @@ func HandleGiveawayReactions(s *discordgo.Session, r *discordgo.MessageReactionA
 			if err != nil {
 				log.Panicln("HandleGiveawayReactions DbMap.Update(participant) " + err.Error())
 			}
-			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, reject)
+			updateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, reject)
 		}
 		return
 	} else {
-		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
+		_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
 	}
 }
 
-func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+func HandleThxmeReactions(session *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	if !isThxmeMessage(r.MessageID) {
 		return
 	}
-	if r.UserID == s.State.User.ID {
+	if r.UserID == session.State.User.ID {
 		return
 	}
 
 	candidate := getParticipantCandidateByMessageId(r.MessageID)
 
 	if r.UserID != candidate.CandidateApproverId {
-		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
+		_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
 		return
 	}
 
-	reactionists, _ := s.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
+	reactionists, _ := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
 	for _, user := range reactionists {
 		if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
 			continue
 		}
 
-		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
+		_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
 	}
 	reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
 	for _, user := range reactionists {
@@ -92,7 +92,7 @@ func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			continue
 		}
 
-		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
+		_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
 	}
 
 	candidate.AcceptTime.Time = time.Now()
@@ -120,7 +120,7 @@ func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			GuildName:  candidate.GuildName,
 			ChannelId:  channelId,
 		}
-		participant.MessageId = *updateThxInfoMessage(nil, channelId, candidate.CandidateName, participant.GiveawayId, nil, wait)
+		participant.MessageId = *updateThxInfoMessage(session, nil, channelId, candidate.CandidateName, participant.GiveawayId, nil, wait)
 		err = DbMap.Insert(participant)
 		if err != nil {
 			_, _ = session.ChannelMessageSend(channelId, "Coś poszło nie tak przy dodawaniu podziękowania :(")
@@ -140,9 +140,9 @@ func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 	}
 }
 
-func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func OnMessageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 	// ignore own messages
-	if m.Author.ID == s.State.User.ID {
+	if m.Author.ID == session.State.User.ID {
 		return
 	}
 	// ignore other bots messages
@@ -163,35 +163,35 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	args := strings.Fields(m.Content)
 	switch args[0] {
 	case "thx":
-		handleThxCommand(m, args)
+		handleThxCommand(session, m, args)
 	case "thxme":
-		handleThxmeCommand(s, m, args)
+		handleThxmeCommand(session, m, args)
 	case "giveaway":
-		printGiveawayInfo(m.ChannelID, m.GuildID)
+		printGiveawayInfo(session, m.ChannelID, m.GuildID)
 	case "csrvbot":
-		handleCsrvbotCommand(s, m, args)
+		handleCsrvbotCommand(session, m, args)
 	case "setwinner":
-		handleSetwinnerCommand(s, m, args)
+		handleSetwinnerCommand(session, m, args)
 	}
 }
 
-func OnGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
+func OnGuildCreate(session *discordgo.Session, g *discordgo.GuildCreate) {
 	log.Printf("Zarejestrowałem utworzenie gildii")
 	createConfigurationIfNotExists(g.Guild.ID)
-	createMissingGiveaways()
-	updateAllMembersSavedRoles(g.Guild.ID)
+	createMissingGiveaways(session)
+	updateAllMembersSavedRoles(session, g.Guild.ID)
 }
 
-func OnGuildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
+func OnGuildMemberUpdate(session *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 	if m.GuildID == "" {
 		return
 	}
 	updateMemberSavedRoles(m.Member, m.GuildID)
 }
 
-func OnGuildMemberAdd(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
+func OnGuildMemberAdd(session *discordgo.Session, m *discordgo.GuildMemberAdd) {
 	if m.GuildID == "" {
 		return
 	}
-	restoreMemberRoles(m.Member, m.GuildID)
+	restoreMemberRoles(session, m.Member, m.GuildID)
 }

@@ -37,7 +37,7 @@ func isThxmeMessage(messageID string) bool {
 	return ret == 1
 }
 
-func updateThxInfoMessage(messageId *string, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
+func updateThxInfoMessage(session *discordgo.Session, messageId *string, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
 	splittedCronString := strings.Split(config.GiveawayCronString, " ")
 	giveawayTimeString := splittedCronString[1] + ":" + splittedCronString[2]
 	embed := discordgo.MessageEmbed{

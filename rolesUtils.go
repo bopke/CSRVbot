@@ -7,7 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func getRoleID(guildID string, roleName string) (string, error) {
+func getRoleID(session *discordgo.Session, guildID string, roleName string) (string, error) {
 	guild, err := session.Guild(guildID)
 	if err != nil {
 		log.Println("getRoleID session.Guild(" + guildID + ") " + err.Error())
@@ -22,9 +22,9 @@ func getRoleID(guildID string, roleName string) (string, error) {
 	return "", errors.New("no " + roleName + " role available")
 }
 
-func hasRole(member *discordgo.Member, roleName, guildID string) bool {
+func hasRole(session *discordgo.Session, member *discordgo.Member, roleName, guildID string) bool {
 	//z jakiegos powodu w strukturze member GuildID jest puste...
-	adminRole, err := getRoleID(guildID, roleName)
+	adminRole, err := getRoleID(session, guildID, roleName)
 	if err != nil {
 		log.Println("hasRole getRoleID(" + guildID + ", " + roleName + ") " + err.Error())
 		return false
@@ -36,7 +36,7 @@ func hasRole(member *discordgo.Member, roleName, guildID string) bool {
 	}
 	return false
 }
-func hasPermission(member *discordgo.Member, guildID string, permission int) bool {
+func hasPermission(session *discordgo.Session, member *discordgo.Member, guildID string, permission int) bool {
 	for _, roleID := range member.Roles {
 		role, err := session.State.Role(guildID, roleID)
 		if err != nil {
@@ -50,8 +50,8 @@ func hasPermission(member *discordgo.Member, guildID string, permission int) boo
 	return false
 }
 
-func hasAdminPermissions(member *discordgo.Member, guildID string) bool {
-	if hasRole(member, getAdminRoleForGuild(guildID), guildID) || hasPermission(member, guildID, 8) { // 8 - administrator
+func hasAdminPermissions(session *discordgo.Session, member *discordgo.Member, guildID string) bool {
+	if hasRole(session, member, getAdminRoleForGuild(guildID), guildID) || hasPermission(session, member, guildID, 8) { // 8 - administrator
 		return true
 	}
 	return false
@@ -115,7 +115,7 @@ func updateMemberSavedRoles(member *discordgo.Member, guildId string) {
 	}
 }
 
-func restoreMemberRoles(member *discordgo.Member, guildId string) {
+func restoreMemberRoles(session *discordgo.Session, member *discordgo.Member, guildId string) {
 	var memberRoles []MemberRole
 	_, err := DbMap.Select(&memberRoles, "SELECT * FROM MemberRoles WHERE guild_id = ? AND member_id = ?", guildId, member.User.ID)
 	if err != nil {
@@ -131,8 +131,8 @@ func restoreMemberRoles(member *discordgo.Member, guildId string) {
 	}
 }
 
-func updateAllMembersSavedRoles(guildId string) {
-	guildMembers := getAllMembers(guildId)
+func updateAllMembersSavedRoles(session *discordgo.Session, guildId string) {
+	guildMembers := getAllMembers(session, guildId)
 	for _, member := range guildMembers {
 		updateMemberSavedRoles(member, guildId)
 	}

@@ -32,7 +32,7 @@ func getAllUnfinishedGiveaways() []Giveaway {
 	return res
 }
 
-func createMissingGiveaways() {
+func createMissingGiveaways(session *discordgo.Session) {
 	for i := 0; i < len(session.State.Guilds); i++ {
 		// Jak się tak dziwnie nie wyciągnie gildii to nie działa
 		guild, _ := session.Guild(session.State.Guilds[i].ID)
@@ -66,15 +66,15 @@ func getGiveawayChannelNameForGuild(guildID string) string {
 	return serverConfig.MainChannel
 }
 
-func finishGiveaways() {
+func finishGiveaways(session *discordgo.Session) {
 	giveaways := getAllUnfinishedGiveaways()
 	for _, giveaway := range giveaways {
-		finishGiveaway(giveaway.GuildId)
+		finishGiveaway(session, giveaway.GuildId)
 	}
-	createMissingGiveaways()
+	createMissingGiveaways(session)
 }
 
-func finishGiveaway(guildID string) {
+func finishGiveaway(session *discordgo.Session, guildID string) {
 	giveaway := getGiveawayForGuild(guildID)
 	guild, err := session.Guild(giveaway.GuildId)
 	if err != nil {
@@ -100,7 +100,7 @@ func finishGiveaway(guildID string) {
 		if err != nil {
 			log.Panicln("finishGiveaway DbMap.Select " + err.Error())
 		}
-		notifyWinner(giveaway.GuildId, giveawayChannelId, nil, "")
+		notifyWinner(session, giveaway.GuildId, giveawayChannelId, nil, "")
 		return
 	}
 	code, err := getCSRVCode()
@@ -111,7 +111,7 @@ func finishGiveaway(guildID string) {
 	}
 	rand.Seed(time.Now().UnixNano())
 	winner := participants[rand.Int()%len(participants)]
-	giveaway.InfoMessageId.String = notifyWinner(giveaway.GuildId, giveawayChannelId, &winner.UserId, code)
+	giveaway.InfoMessageId.String = notifyWinner(session, giveaway.GuildId, giveawayChannelId, &winner.UserId, code)
 	giveaway.InfoMessageId.Valid = true
 	giveaway.EndTime.Time = time.Now()
 	giveaway.EndTime.Valid = true
@@ -190,7 +190,7 @@ func getParticipantCandidateByMessageId(messageId string) *ParticipantCandidate 
 	return &candidate
 }
 
-func notifyWinner(guildID, channelID string, winnerID *string, code string) string {
+func notifyWinner(session *discordgo.Session, guildID, channelID string, winnerID *string, code string) string {
 	guild, err := session.Guild(guildID)
 	var guildName string
 	if err != nil {
@@ -234,7 +234,7 @@ func notifyWinner(guildID, channelID string, winnerID *string, code string) stri
 	return message.ID
 }
 
-func deleteFromGiveaway(guildID, userID string) {
+func deleteFromGiveaway(session *discordgo.Session, guildID, userID string) {
 	giveawayId := getGiveawayForGuild(guildID).Id
 	participants := getParticipantsByGiveawayId(giveawayId)
 	for _, participant := range participants {
@@ -248,7 +248,7 @@ func deleteFromGiveaway(guildID, userID string) {
 		}
 	}
 	for _, participant := range participants {
-		updateThxInfoMessage(&participant.MessageId, participant.ChannelId, participant.UserId, participant.GiveawayId, nil, reject)
+		updateThxInfoMessage(session, &participant.MessageId, participant.ChannelId, participant.UserId, participant.GiveawayId, nil, reject)
 	}
 	return
 }
