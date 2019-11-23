@@ -18,16 +18,7 @@ import (
 	"github.com/robfig/cron"
 )
 
-func InitLog() {
-	file, err := os.OpenFile("csrvbot.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		panic(err)
-	}
-	log.SetOutput(file)
-}
-
 func main() {
-	//	InitLog()
 	err := config.Load()
 	if err != nil {
 		panic(err)
