@@ -1,7 +1,8 @@
-package main
+package utils
 
 import (
 	"csrvbot/config"
+	"csrvbot/giveaways"
 	"log"
 	"strings"
 	"time"
@@ -17,10 +18,10 @@ const (
 	reject
 )
 
-func isThxMessage(messageID string) bool {
+func IsThxMessage(messageID string) bool {
 	ret, err := DbMap.SelectInt("SELECT count(*) FROM Participants WHERE message_id = ?", messageID)
 	if err != nil {
-		log.Panicln("isThxMessage DbMap.SelectInt " + err.Error())
+		log.Panicln("IsThxMessage DbMap.SelectInt " + err.Error())
 	}
 	if ret == 1 {
 		return true
@@ -28,16 +29,16 @@ func isThxMessage(messageID string) bool {
 	return false
 }
 
-func isThxmeMessage(messageID string) bool {
+func IsThxmeMessage(messageID string) bool {
 	ret, err := DbMap.SelectInt("SELECT count(*) FROM ParticipantCandidates WHERE message_id = ?", messageID)
 	if err != nil {
-		log.Panicln("isThxmeMessage DbMap.SelectInt " + err.Error())
+		log.Panicln("IsThxmeMessage DbMap.SelectInt " + err.Error())
 	}
 
 	return ret == 1
 }
 
-func updateThxInfoMessage(session *discordgo.Session, messageId *string, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
+func UpdateThxInfoMessage(session *discordgo.Session, messageId *string, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
 	splittedCronString := strings.Split(config.GiveawayCronString, " ")
 	giveawayTimeString := splittedCronString[1] + ":" + splittedCronString[2]
 	embed := discordgo.MessageEmbed{
@@ -52,7 +53,7 @@ func updateThxInfoMessage(session *discordgo.Session, messageId *string, channel
 			"To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. " +
 			"Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
 			"**Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.**\n\n" +
-			"W aktualnym giveawayu są: " + getParticipantsNamesString(giveawayId) + "\n\n" +
+			"W aktualnym giveawayu są: " + giveaways.GetParticipantsNamesString(giveawayId) + "\n\n" +
 			"Nagrody rozdajemy o " + giveawayTimeString + ", Powodzenia!",
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
@@ -79,13 +80,13 @@ func updateThxInfoMessage(session *discordgo.Session, messageId *string, channel
 	if messageId != nil {
 		message, err = session.ChannelMessageEditEmbed(channelId, *messageId, &embed)
 		if err != nil {
-			log.Println("updateThxInfoMessage session.ChannelMessageEditEmbed(" + channelId + ", " + *messageId + ", embed) " + err.Error())
+			log.Println("UpdateThxInfoMessage session.ChannelMessageEditEmbed(" + channelId + ", " + *messageId + ", embed) " + err.Error())
 			return nil
 		}
 	} else {
 		message, err = session.ChannelMessageSendEmbed(channelId, &embed)
 		if err != nil {
-			log.Println("updateThxInfoMessage session.ChannelMessageEditEmbed(" + channelId + ", nil, embed) " + err.Error())
+			log.Println("UpdateThxInfoMessage session.ChannelMessageEditEmbed(" + channelId + ", nil, embed) " + err.Error())
 			return nil
 		}
 	}

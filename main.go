@@ -1,6 +1,8 @@
 package main
 
 import (
+	"csrvbot/database"
+	"csrvbot/scheduledJobs"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -15,7 +17,6 @@ import (
 	"csrvbot/config"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/robfig/cron"
 )
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	InitDB()
+	database.Init()
 	session, err := discordgo.New("Bot " + config.DiscordToken)
 	if err != nil {
 		panic(err)
@@ -40,10 +41,7 @@ func main() {
 		panic(err)
 	}
 
-	c := cron.New()
-	//broken for now
-	//_ = c.AddFunc(config.GiveawayCronString, finishGiveaways)
-	c.Start()
+	scheduledJobs.Init(session)
 
 	log.Println("Wystartowałem")
 	sc := make(chan os.Signal, 1)
@@ -149,28 +147,6 @@ func generateResendEmbed(userId string) (embed *discordgo.MessageEmbed, err erro
 	embed.Description = ""
 	for _, giveaway := range giveaways {
 		embed.Description += giveaway.Code.String + "\n"
-	}
-	return
-}
-
-func createConfigurationIfNotExists(guildID string) {
-	var serverConfig ServerConfig
-	err := DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig")
-	if err == sql.ErrNoRows {
-		serverConfig.GuildId = guildID
-		serverConfig.MainChannel = "giveaway"
-		serverConfig.AdminRole = "CraftserveBotAdmin"
-		err = DbMap.Insert(&serverConfig)
-	}
-	if err != nil {
-		log.Panicln("createConfigurationIfNotExists DbMap.SelectOne " + err.Error())
-	}
-}
-
-func getServerConfigForGuildId(guildID string) (serverConfig ServerConfig) {
-	err := DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig")
-	if err != nil {
-		log.Panicln("createConfigurationIfNotExists DbMap.SelectOne " + err.Error())
 	}
 	return
 }
