@@ -2,7 +2,7 @@ package CsrvbotSubcommands
 
 import (
 	"csrvbot/Database"
-	"csrvbot/Giveaways"
+	"csrvbot/Models"
 	"github.com/bwmarrin/discordgo"
 	"log"
 )
@@ -28,7 +28,7 @@ func HandleResendCommand(session *discordgo.Session, m *discordgo.MessageCreate,
 }
 
 func generateResendEmbed(userId string) (embed *discordgo.MessageEmbed) {
-	var givs []Giveaways.Giveaway
+	var givs []Models.Giveaway
 	_, err := Database.DbMap.Select(&givs, "SELECT code FROM Giveaways WHERE winner_id=? ORDER BY id DESC LIMIT 10", userId)
 	if err != nil {
 		log.Panicln("Commands CsrvbotSubcommands generateResendEmbed Unable to select from database! ", err)

@@ -1,4 +1,4 @@
-package Utils
+package Models
 
 type MemberRole struct {
 	Id       int    `db:"id,primarykey,autoincrement"`

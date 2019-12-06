@@ -1,19 +1,21 @@
 package Giveaways
 
 import (
+	"csrvbot/Config"
 	"csrvbot/Database"
-	"csrvbot/ServerConfiguration"
+	"csrvbot/Models"
 	"csrvbot/Utils"
 	"database/sql"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-func GetGiveawayForGuild(guildId string) *Giveaway {
-	var giveaway Giveaway
+func GetGiveawayForGuild(guildId string) *Models.Giveaway {
+	var giveaway Models.Giveaway
 	err := Database.DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guild_id = ? AND end_time IS NULL", guildId)
 	if err != nil && err != sql.ErrNoRows {
 		log.Panicln("Giveaways GetGiveawayForGuild Unable to select from database! ", err)
@@ -24,8 +26,8 @@ func GetGiveawayForGuild(guildId string) *Giveaway {
 	return &giveaway
 }
 
-func GetAllUnfinishedGiveaways() []Giveaway {
-	var res []Giveaway
+func GetAllUnfinishedGiveaways() []Models.Giveaway {
+	var res []Models.Giveaway
 	_, err := Database.DbMap.Select(&res, "SELECT * FROM Giveaways WHERE end_time IS NULL")
 	if err != nil {
 		log.Panicln("Giveaways GetAllUnfinishedGiveaways Unable to select from database! ", err)
@@ -44,7 +46,7 @@ func CreateMissingGiveaways(session *discordgo.Session) {
 			if channel.Name == GetGiveawayChannelNameForGuild(guild.ID) {
 				giveaway := GetGiveawayForGuild(guild.ID)
 				if giveaway == nil {
-					giveaway = &Giveaway{
+					giveaway = &Models.Giveaway{
 						StartTime: time.Now(),
 						GuildId:   guild.ID,
 						GuildName: guild.Name,
@@ -61,7 +63,7 @@ func CreateMissingGiveaways(session *discordgo.Session) {
 }
 
 func GetGiveawayChannelNameForGuild(guildID string) string {
-	var serverConfig ServerConfiguration.ServerConfig
+	var serverConfig Models.ServerConfig
 	err := Database.DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig WHERE guild_id = ?", guildID)
 	if err != nil {
 		log.Println("Giveaways GetGiveawaysChannelNameForGuild Unable to select from database! ", err)
@@ -84,7 +86,7 @@ func FinishGiveaway(session *discordgo.Session, guildID string) {
 			break
 		}
 	}
-	var participants []Participant
+	var participants []Models.Participant
 	_, err = Database.DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveaway.Id)
 	if err != nil {
 		log.Panicln("Giveaways FinishGiveaway Unable to select from database! ", err)
@@ -124,4 +126,32 @@ func FinishGiveaway(session *discordgo.Session, guildID string) {
 	if err != nil {
 		log.Panicln("Giveaways FinishGiveaway Unable to update in database! ", err)
 	}
+}
+
+func PrintGiveawayInfo(session *discordgo.Session, channelID, guildID string) *discordgo.Message {
+	splittedCronString := strings.Split(Config.GiveawayCronString, " ")
+	giveawayTimeString := splittedCronString[1] + ":" + splittedCronString[2]
+	info := "**Ten bot organizuje giveaway kodów na serwery Diamond.**\n" +
+		"**Każdy kod przedłuża serwer o 7 dni.**\n" +
+		"Aby wziąć udział pomagaj innym użytkownikom. Jeżeli komuś pomożesz, to poproś tą osobę aby napisala `!thx @TwojNick` - w ten sposób dostaniesz się do loterii. To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
+		"**Sponsorem tego bota jest https://craftserve.pl/ - hosting serwerów Minecraft.**\n\n" +
+		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
+		"Uczestnicy: " +
+		GetParticipantsNamesString(GetGiveawayForGuild(guildID).Id) +
+		"\n\nNagrody rozdajemy o " + giveawayTimeString + ", Powodzenia!"
+	embed := &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://craftserve.pl",
+			Name:    "Informacje o Giveawayu",
+			IconURL: "https://cdn.discordapp.com/avatars/524308413719642118/c2a17b4479bfcc89d2b7e64e6ae15ebe.webp",
+		},
+		Description: info,
+		Color:       0x234d20,
+		Timestamp:   time.Now().Format(time.RFC3339),
+	}
+	m, err := session.ChannelMessageSendEmbed(channelID, embed)
+	if err != nil {
+		log.Println("Utils PrintGiveawayInfo Unable to send channel message embed ", err)
+	}
+	return m
 }

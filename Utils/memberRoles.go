@@ -2,7 +2,7 @@ package Utils
 
 import (
 	"csrvbot/Database"
-	"csrvbot/ServerConfiguration"
+	"csrvbot/Models"
 	"errors"
 	"log"
 
@@ -59,7 +59,7 @@ func HasAdminPermissions(session *discordgo.Session, member *discordgo.Member, g
 }
 
 func GetAdminRoleForGuild(guildId string) string {
-	var serverConfig ServerConfiguration.ServerConfig
+	var serverConfig Models.ServerConfig
 	err := Database.DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig WHERE guild_id = ?", guildId)
 	if err != nil {
 		log.Println("Utils GetAdminRoleForGuild Unable to get server configuration! ", err)
@@ -69,7 +69,7 @@ func GetAdminRoleForGuild(guildId string) string {
 }
 
 func GetSavedRoles(guildId, memberId string) ([]string, error) {
-	var memberRoles []MemberRole
+	var memberRoles []Models.MemberRole
 	_, err := Database.DbMap.Select(&memberRoles, "SELECT * FROM MemberRoles WHERE guild_id = ? AND member_id = ?", guildId, memberId)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func UpdateMemberSavedRoles(member *discordgo.Member, guildId string) {
 			}
 		}
 		if !found {
-			memberrole := MemberRole{GuildId: guildId, RoleId: memberRole, MemberId: member.User.ID}
+			memberrole := Models.MemberRole{GuildId: guildId, RoleId: memberRole, MemberId: member.User.ID}
 			err = Database.DbMap.Insert(&memberrole)
 			if err != nil {
 				log.Println("Utils UpdateAllMembersSavedRoles Unable to insert to database! ", err)
@@ -117,7 +117,7 @@ func UpdateMemberSavedRoles(member *discordgo.Member, guildId string) {
 }
 
 func RestoreMemberRoles(session *discordgo.Session, member *discordgo.Member, guildId string) {
-	var memberRoles []MemberRole
+	var memberRoles []Models.MemberRole
 	_, err := Database.DbMap.Select(&memberRoles, "SELECT * FROM MemberRoles WHERE guild_id = ? AND member_id = ?", guildId, member.User.ID)
 	if err != nil {
 		log.Println("Utils RestoreMemberRoles Unable to get user saved roles ", err)

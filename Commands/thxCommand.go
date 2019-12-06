@@ -3,7 +3,7 @@ package Commands
 import (
 	"csrvbot/Database"
 	"csrvbot/Giveaways"
-	"csrvbot/Utils"
+	"csrvbot/Models"
 	"log"
 	"time"
 
@@ -12,7 +12,7 @@ import (
 
 func HandleThxCommand(session *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if len(args) != 1 || len(m.Mentions) != 1 {
-		Utils.PrintGiveawayInfo(session, m.ChannelID, m.GuildID)
+		Giveaways.PrintGiveawayInfo(session, m.ChannelID, m.GuildID)
 		return
 	}
 	if m.Author.ID == m.Mentions[0].ID {
@@ -46,7 +46,7 @@ func HandleThxCommand(session *discordgo.Session, m *discordgo.MessageCreate, ar
 		}
 		return
 	}
-	participant := &Giveaways.Participant{
+	participant := &Models.Participant{
 		UserId:     m.Mentions[0].ID,
 		GiveawayId: Giveaways.GetGiveawayForGuild(m.GuildID).Id,
 		CreateTime: time.Now(),
@@ -55,7 +55,7 @@ func HandleThxCommand(session *discordgo.Session, m *discordgo.MessageCreate, ar
 	}
 	participant.GuildName = guild.Name
 	participant.UserName = m.Mentions[0].Username
-	participant.MessageId = *Utils.UpdateThxInfoMessage(session, nil, m.ChannelID, m.Mentions[0].ID, participant.GiveawayId, nil, Utils.Wait)
+	participant.MessageId = *Giveaways.UpdateThxInfoMessage(session, nil, m.ChannelID, m.Mentions[0].ID, participant.GiveawayId, nil, Giveaways.Wait)
 	err = Database.DbMap.Insert(participant)
 	if err != nil {
 		log.Println("Commands HandleThxCommand Unable to insert to database! ", err)

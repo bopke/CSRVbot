@@ -2,9 +2,7 @@ package Database
 
 import (
 	"csrvbot/Config"
-	"csrvbot/Giveaways"
-	"csrvbot/ServerConfiguration"
-	"csrvbot/Utils"
+	"csrvbot/Models"
 	"database/sql"
 	"log"
 
@@ -21,12 +19,12 @@ func Init() {
 	}
 	DbMap = gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{Engine: "InnoDB", Encoding: "UTF8MB4"}}
 
-	DbMap.AddTableWithName(Giveaways.Giveaway{}, "Giveaways").SetKeys(true, "id")
-	DbMap.AddTableWithName(Giveaways.Participant{}, "Participants").SetKeys(true, "id")
-	DbMap.AddTableWithName(Giveaways.ParticipantCandidate{}, "ParticipantCandidates").SetKeys(true, "id")
-	DbMap.AddTableWithName(Giveaways.Blacklist{}, "Blacklists").SetKeys(true, "id")
-	DbMap.AddTableWithName(ServerConfiguration.ServerConfig{}, "ServerConfig").SetKeys(true, "id")
-	DbMap.AddTableWithName(Utils.MemberRole{}, "MemberRoles").SetKeys(true, "id")
+	DbMap.AddTableWithName(Models.Giveaway{}, "Giveaways").SetKeys(true, "id")
+	DbMap.AddTableWithName(Models.Participant{}, "Participants").SetKeys(true, "id")
+	DbMap.AddTableWithName(Models.ParticipantCandidate{}, "ParticipantCandidates").SetKeys(true, "id")
+	DbMap.AddTableWithName(Models.Blacklist{}, "Blacklists").SetKeys(true, "id")
+	DbMap.AddTableWithName(Models.ServerConfig{}, "ServerConfig").SetKeys(true, "id")
+	DbMap.AddTableWithName(Models.MemberRole{}, "MemberRoles").SetKeys(true, "id")
 
 	err = DbMap.CreateTablesIfNotExists()
 	if err != nil {

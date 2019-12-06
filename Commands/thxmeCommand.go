@@ -3,16 +3,14 @@ package Commands
 import (
 	"csrvbot/Database"
 	"csrvbot/Giveaways"
-	"csrvbot/Utils"
+	"csrvbot/Models"
 	"github.com/bwmarrin/discordgo"
 	"log"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 func HandleThxmeCommand(session *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if len(args) != 1 || len(m.Mentions) != 1 {
-		Utils.PrintGiveawayInfo(session, m.ChannelID, m.GuildID)
+		Giveaways.PrintGiveawayInfo(session, m.ChannelID, m.GuildID)
 		return
 	}
 	if m.Author.ID == m.Mentions[0].ID {
@@ -47,7 +45,7 @@ func HandleThxmeCommand(session *discordgo.Session, m *discordgo.MessageCreate, 
 		}
 		return
 	}
-	candidate := &Giveaways.ParticipantCandidate{
+	candidate := &Models.ParticipantCandidate{
 		CandidateName:         m.Author.Username,
 		CandidateId:           m.Author.ID,
 		CandidateApproverName: m.Mentions[0].Username,

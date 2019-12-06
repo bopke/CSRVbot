@@ -1,9 +1,8 @@
-package Utils
+package Giveaways
 
 import (
 	"csrvbot/Config"
 	"csrvbot/Database"
-	"csrvbot/Giveaways"
 	"log"
 	"strings"
 	"time"
@@ -53,7 +52,7 @@ func UpdateThxInfoMessage(session *discordgo.Session, messageId *string, channel
 			"To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. " +
 			"Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
 			"**Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.**\n\n" +
-			"W aktualnym giveawayu są: " + Giveaways.GetParticipantsNamesString(giveawayId) + "\n\n" +
+			"W aktualnym giveawayu są: " + GetParticipantsNamesString(giveawayId) + "\n\n" +
 			"Nagrody rozdajemy o " + giveawayTimeString + ", Powodzenia!",
 		Timestamp: time.Now().Format(time.RFC3339),
 	}

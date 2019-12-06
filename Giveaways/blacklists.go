@@ -2,11 +2,12 @@ package Giveaways
 
 import (
 	"csrvbot/Database"
+	"csrvbot/Models"
 	"log"
 )
 
 func BlacklistUser(guildID, userID, blacklisterID string) {
-	blacklist := &Blacklist{GuildId: guildID,
+	blacklist := &Models.Blacklist{GuildId: guildID,
 		UserId:        userID,
 		BlacklisterId: blacklisterID}
 	err := Database.DbMap.Insert(blacklist)

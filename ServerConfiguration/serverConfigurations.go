@@ -2,19 +2,13 @@ package ServerConfiguration
 
 import (
 	"csrvbot/Database"
+	"csrvbot/Models"
 	"database/sql"
 	"log"
 )
 
-type ServerConfig struct {
-	Id          int    `db:"id,primarykey,autoincrement"`
-	GuildId     string `db:"guild_id,size:255"`
-	AdminRole   string `db:"admin_role,size:255"`
-	MainChannel string `db:"main_channel,size:255"`
-}
-
 func CreateConfigurationIfNotExists(guildID string) {
-	var serverConfig ServerConfig
+	var serverConfig Models.ServerConfig
 	err := Database.DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig WHERE guild_id = ?", guildID)
 	if err == sql.ErrNoRows {
 		serverConfig.GuildId = guildID
@@ -30,7 +24,7 @@ func CreateConfigurationIfNotExists(guildID string) {
 	}
 }
 
-func GetServerConfigForGuildId(guildID string) (serverConfig ServerConfig) {
+func GetServerConfigForGuildId(guildID string) (serverConfig Models.ServerConfig) {
 	err := Database.DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig WHERE guild_id = ?", guildID)
 	if err != nil {
 		log.Panicln("ServerConfiguration CreateConfigurationIfNotExists Unable to select from database! ", err)

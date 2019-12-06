@@ -2,7 +2,7 @@ package Giveaways
 
 import (
 	"csrvbot/Database"
-	"csrvbot/Utils"
+	"csrvbot/Models"
 	"database/sql"
 	"log"
 	"strings"
@@ -11,7 +11,7 @@ import (
 )
 
 func GetParticipantsNames(giveawayId int) []string {
-	var participants []Participant
+	var participants []Models.Participant
 	_, err := Database.DbMap.Select(&participants, "SELECT user_name FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -26,8 +26,8 @@ func GetParticipantsNames(giveawayId int) []string {
 	return names
 }
 
-func GetParticipantByMessageId(messageId string) *Participant {
-	var participant Participant
+func GetParticipantByMessageId(messageId string) *Models.Participant {
+	var participant Models.Participant
 	err := Database.DbMap.SelectOne(&participant, "SELECT * FROM Participants WHERE message_id = ?", messageId)
 	if err != nil && err != sql.ErrNoRows {
 		log.Panicln("Giveaways GetParticipantByMessageId Unable to select from database ", err)
@@ -38,8 +38,8 @@ func GetParticipantByMessageId(messageId string) *Participant {
 	return &participant
 }
 
-func GetParticipantsByGiveawayId(giveawayId int) []Participant {
-	var participants []Participant
+func GetParticipantsByGiveawayId(giveawayId int) []Models.Participant {
+	var participants []Models.Participant
 	_, err := Database.DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -130,7 +130,7 @@ func DeleteParticipantFromGiveaway(session *discordgo.Session, guildID, userID s
 		}
 	}
 	for _, participant := range participants {
-		Utils.UpdateThxInfoMessage(session, &participant.MessageId, participant.ChannelId, participant.UserId, participant.GiveawayId, nil, Utils.Reject)
+		UpdateThxInfoMessage(session, &participant.MessageId, participant.ChannelId, participant.UserId, participant.GiveawayId, nil, Reject)
 	}
 	return
 }

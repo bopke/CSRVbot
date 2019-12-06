@@ -4,6 +4,7 @@ import (
 	"csrvbot/Commands"
 	"csrvbot/Database"
 	"csrvbot/Giveaways"
+	"csrvbot/Models"
 	"csrvbot/ServerConfiguration"
 	"csrvbot/Utils"
 	"fmt"
@@ -15,7 +16,7 @@ import (
 )
 
 func HandleGiveawayReactions(session *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	if !Utils.IsThxMessage(r.MessageID) {
+	if !Giveaways.IsThxMessage(r.MessageID) {
 		return
 	}
 	if r.UserID == session.State.User.ID {
@@ -67,7 +68,7 @@ func HandleGiveawayReactions(session *discordgo.Session, r *discordgo.MessageRea
 			if err != nil {
 				log.Panicln(err)
 			}
-			Utils.UpdateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, Utils.Confirm)
+			Giveaways.UpdateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, Giveaways.Confirm)
 		} else if r.Emoji.Name == "⛔" {
 			log.Println(member.User.Username + "(" + member.User.ID + ") refused " + participant.UserName + "(" + participant.UserId + ") as participant in giveaway ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = false
@@ -75,7 +76,7 @@ func HandleGiveawayReactions(session *discordgo.Session, r *discordgo.MessageRea
 			if err != nil {
 				log.Panicln("HandleGiveawayReactions Unable to update in database! ", err)
 			}
-			Utils.UpdateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, Utils.Reject)
+			Giveaways.UpdateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, Giveaways.Reject)
 		}
 		return
 	} else {
@@ -87,7 +88,7 @@ func HandleGiveawayReactions(session *discordgo.Session, r *discordgo.MessageRea
 }
 
 func HandleThxmeReactions(session *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	if !Utils.IsThxmeMessage(r.MessageID) {
+	if !Giveaways.IsThxmeMessage(r.MessageID) {
 		return
 	}
 	if r.UserID == session.State.User.ID {
@@ -153,7 +154,7 @@ func HandleThxmeReactions(session *discordgo.Session, r *discordgo.MessageReacti
 		}
 
 		channelId := candidate.ChannelId
-		participant := &Giveaways.Participant{
+		participant := &Models.Participant{
 			UserId:     candidate.CandidateId,
 			UserName:   candidate.CandidateName,
 			GiveawayId: Giveaways.GetGiveawayForGuild(candidate.GuildId).Id,
@@ -162,7 +163,7 @@ func HandleThxmeReactions(session *discordgo.Session, r *discordgo.MessageReacti
 			GuildName:  candidate.GuildName,
 			ChannelId:  channelId,
 		}
-		participant.MessageId = *Utils.UpdateThxInfoMessage(session, nil, channelId, candidate.CandidateName, participant.GiveawayId, nil, Utils.Wait)
+		participant.MessageId = *Giveaways.UpdateThxInfoMessage(session, nil, channelId, candidate.CandidateName, participant.GiveawayId, nil, Giveaways.Wait)
 		err = Database.DbMap.Insert(participant)
 		if err != nil {
 			_, err2 := session.ChannelMessageSend(channelId, "Coś poszło nie tak przy dodawaniu podziękowania :(")
@@ -218,7 +219,7 @@ func OnMessageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 	case "thxme":
 		Commands.HandleThxmeCommand(session, m, args[1:])
 	case "giveaway":
-		Utils.PrintGiveawayInfo(session, m.ChannelID, m.GuildID)
+		Giveaways.PrintGiveawayInfo(session, m.ChannelID, m.GuildID)
 	case "csrvbot":
 		Commands.HandleCsrvbotCommand(session, m, args[1:])
 	case "setwinner":

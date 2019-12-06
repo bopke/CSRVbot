@@ -1,4 +1,4 @@
-package Giveaways
+package Models
 
 import (
 	"database/sql"
