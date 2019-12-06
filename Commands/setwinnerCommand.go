@@ -1,8 +1,9 @@
 package Commands
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"log"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func HandleSetwinnerCommand(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {

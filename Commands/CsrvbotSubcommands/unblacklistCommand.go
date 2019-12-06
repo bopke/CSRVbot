@@ -3,8 +3,9 @@ package CsrvbotSubcommands
 import (
 	"csrvbot/Giveaways"
 	"csrvbot/Utils"
-	"github.com/bwmarrin/discordgo"
 	"log"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func HandleUnblacklistCommand(session *discordgo.Session, m *discordgo.MessageCreate, args []string) {

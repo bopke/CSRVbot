@@ -4,10 +4,11 @@ import (
 	"csrvbot/Config"
 	"csrvbot/Giveaways"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func GetAllMembers(session *discordgo.Session, guildId string) []*discordgo.Member {

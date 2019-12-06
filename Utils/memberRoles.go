@@ -4,8 +4,9 @@ import (
 	"csrvbot/Database"
 	"csrvbot/ServerConfiguration"
 	"errors"
-	"github.com/bwmarrin/discordgo"
 	"log"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func GetRoleID(session *discordgo.Session, guildID string, roleName string) (string, error) {

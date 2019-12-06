@@ -5,10 +5,11 @@ import (
 	"csrvbot/ServerConfiguration"
 	"csrvbot/Utils"
 	"database/sql"
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func GetGiveawayForGuild(guildId string) *Giveaway {

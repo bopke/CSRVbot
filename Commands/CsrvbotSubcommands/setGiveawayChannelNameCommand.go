@@ -4,8 +4,9 @@ import (
 	"csrvbot/Database"
 	"csrvbot/ServerConfiguration"
 	"csrvbot/Utils"
-	"github.com/bwmarrin/discordgo"
 	"log"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func HandleSetGiveawayChannelNameCommand(session *discordgo.Session, m *discordgo.MessageCreate, args []string) {

@@ -4,9 +4,10 @@ import (
 	"csrvbot/Database"
 	"csrvbot/Giveaways"
 	"csrvbot/Utils"
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func HandleThxCommand(session *discordgo.Session, m *discordgo.MessageCreate, args []string) {

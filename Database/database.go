@@ -6,9 +6,10 @@ import (
 	"csrvbot/ServerConfiguration"
 	"csrvbot/Utils"
 	"database/sql"
+	"log"
+
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/gorp.v2"
-	"log"
 )
 
 var DbMap gorp.DbMap

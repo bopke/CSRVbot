@@ -2,8 +2,9 @@ package Commands
 
 import (
 	"csrvbot/Commands/CsrvbotSubcommands"
-	"github.com/bwmarrin/discordgo"
 	"log"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func HandleCsrvbotCommand(session *discordgo.Session, m *discordgo.MessageCreate, args []string) {

@@ -6,6 +6,8 @@ import (
 	"csrvbot/Utils"
 	"github.com/bwmarrin/discordgo"
 	"log"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func HandleThxmeCommand(session *discordgo.Session, m *discordgo.MessageCreate, args []string) {

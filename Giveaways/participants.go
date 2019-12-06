@@ -4,9 +4,10 @@ import (
 	"csrvbot/Database"
 	"csrvbot/Utils"
 	"database/sql"
-	"github.com/bwmarrin/discordgo"
 	"log"
 	"strings"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func GetParticipantsNames(giveawayId int) []string {
