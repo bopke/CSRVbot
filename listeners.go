@@ -1,6 +1,11 @@
 package main
 
 import (
+	"csrvbot/Commands"
+	"csrvbot/Database"
+	"csrvbot/Giveaways"
+	"csrvbot/ServerConfiguration"
+	"csrvbot/Utils"
 	"fmt"
 	"log"
 	"strings"
@@ -10,29 +15,44 @@ import (
 )
 
 func HandleGiveawayReactions(session *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	if !isThxMessage(r.MessageID) {
+	if !Utils.IsThxMessage(r.MessageID) {
 		return
 	}
 	if r.UserID == session.State.User.ID {
 		return
 	}
-	member, _ := session.GuildMember(r.GuildID, r.UserID)
-	if hasAdminPermissions(session, member, r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
-		reactionists, _ := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
+	member, err := session.GuildMember(r.GuildID, r.UserID)
+	if err != nil {
+		log.Println("HandleGiveawayReactions Unable to get guild member! ", err)
+	}
+	if Utils.HasAdminPermissions(session, member, r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
+		reactionists, err := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
+		if err != nil {
+			log.Println("HnadleGiveawayReactions Unable to get message reactions! ", err)
+		}
 		for _, user := range reactionists {
 			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
 				continue
 			}
-			_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
+			err := session.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
+			if err != nil {
+				log.Println("HandleGiveawayReactions Unable to remove message reaction! ", err)
+			}
 		}
-		reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
+		reactionists, err = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
+		if err != nil {
+			log.Println("HandleGiveawayReactions Unable to get message reactions! ", err)
+		}
 		for _, user := range reactionists {
 			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "✅") {
 				continue
 			}
-			_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
+			err = session.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
+			if err != nil {
+				log.Println("HandleGiveawayReactions Unable to remove message reaction! ", err)
+			}
 		}
-		participant := getParticipantByMessageId(r.MessageID)
+		participant := Giveaways.GetParticipantByMessageId(r.MessageID)
 		participant.AcceptTime.Time = time.Now()
 		participant.AcceptTime.Valid = true
 		participant.AcceptUser.String = member.User.Username
@@ -41,58 +61,80 @@ func HandleGiveawayReactions(session *discordgo.Session, r *discordgo.MessageRea
 		participant.AcceptUserId.Valid = true
 		participant.IsAccepted.Valid = true
 		if r.Emoji.Name == "✅" {
-			log.Println(member.User.Username + "(" + member.User.ID + ") zaakceptował udział " + participant.UserName + "(" + participant.UserId + ") w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
+			log.Println(member.User.Username + "(" + member.User.ID + ") accepted " + participant.UserName + "(" + participant.UserId + ") as participant in giveaway ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = true
-			_, err := DbMap.Update(participant)
+			_, err := Database.DbMap.Update(participant)
 			if err != nil {
 				log.Panicln(err)
 			}
-			updateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, confirm)
+			Utils.UpdateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, Utils.Confirm)
 		} else if r.Emoji.Name == "⛔" {
-			log.Println(member.User.Username + "(" + member.User.ID + ") odrzucił udział " + participant.UserName + "(" + participant.UserId + ") w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
+			log.Println(member.User.Username + "(" + member.User.ID + ") refused " + participant.UserName + "(" + participant.UserId + ") as participant in giveaway ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = false
-			_, err := DbMap.Update(participant)
+			_, err := Database.DbMap.Update(participant)
 			if err != nil {
-				log.Panicln("HandleGiveawayReactions DbMap.Update(participant) " + err.Error())
+				log.Panicln("HandleGiveawayReactions Unable to update in database! ", err)
 			}
-			updateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, reject)
+			Utils.UpdateThxInfoMessage(session, &r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, Utils.Reject)
 		}
 		return
 	} else {
-		_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
+		err = session.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
+		if err != nil {
+			log.Println("HandleGiveawayReactions Unable to remove message reaction! ", err)
+		}
 	}
 }
 
 func HandleThxmeReactions(session *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	if !isThxmeMessage(r.MessageID) {
+	if !Utils.IsThxmeMessage(r.MessageID) {
 		return
 	}
 	if r.UserID == session.State.User.ID {
 		return
 	}
 
-	candidate := getParticipantCandidateByMessageId(r.MessageID)
+	candidate := Giveaways.GetParticipantCandidateByMessageId(r.MessageID)
 
-	if r.UserID != candidate.CandidateApproverId {
-		_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
+	member, err := session.GuildMember(r.GuildID, r.UserID)
+	if err != nil {
+		log.Println("HandleThxmeReactions Unable to get guild member! ", err)
+	}
+	if r.UserID != candidate.CandidateApproverId || !Utils.HasAdminPermissions(session, member, r.GuildID) {
+		err = session.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
+		if err != nil {
+			log.Println("HandleThxmeReactions Unable to remove message reaction! ", err)
+		}
 		return
 	}
 
-	reactionists, _ := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
+	reactionists, err := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
+	if err != nil {
+		log.Println("HandleThxmeReactions Unable to get message reactions! ", err)
+	}
 	for _, user := range reactionists {
 		if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
 			continue
 		}
 
-		_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
+		err = session.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
+		if err != nil {
+			log.Println("HandleThxmeReactions Unable to remove message reaction! ", err)
+		}
 	}
-	reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
+	reactionists, err = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
+	if err != nil {
+		log.Println("HandleThxmeReactions Unable to get message reactions! ", err)
+	}
 	for _, user := range reactionists {
 		if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "✅") {
 			continue
 		}
 
-		_ = session.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
+		err = session.MessageReactionRemove(r.ChannelID, r.MessageID, "✅", user.ID)
+		if err != nil {
+			log.Println("HandleThxmeReactions Unable to remove message reaction! ", err)
+		}
 	}
 
 	candidate.AcceptTime.Time = time.Now()
@@ -103,39 +145,48 @@ func HandleThxmeReactions(session *discordgo.Session, r *discordgo.MessageReacti
 		if candidate.IsAccepted.Valid {
 			return
 		}
-		log.Println(candidate.CandidateApproverName + "(" + candidate.CandidateApproverId + ") zaakceptował prosbe o thx uzytkownika " + candidate.CandidateName + "(" + candidate.CandidateId + ")")
+		log.Println(candidate.CandidateApproverName + "(" + candidate.CandidateApproverId + ") accepted thx request from " + candidate.CandidateName + "(" + candidate.CandidateId + ")")
 		candidate.IsAccepted.Bool = true
-		_, err := DbMap.Update(candidate)
+		_, err := Database.DbMap.Update(candidate)
 		if err != nil {
-			log.Panicln("HandleGiveawayReactions DbMap.Update(participant) " + err.Error())
+			log.Panicln("HandleThxmeReactions Unable to update in database! ", err)
 		}
 
 		channelId := candidate.ChannelId
-		participant := &Participant{
+		participant := &Giveaways.Participant{
 			UserId:     candidate.CandidateId,
 			UserName:   candidate.CandidateName,
-			GiveawayId: getGiveawayForGuild(candidate.GuildId).Id,
+			GiveawayId: Giveaways.GetGiveawayForGuild(candidate.GuildId).Id,
 			CreateTime: time.Now(),
 			GuildId:    candidate.GuildId,
 			GuildName:  candidate.GuildName,
 			ChannelId:  channelId,
 		}
-		participant.MessageId = *updateThxInfoMessage(session, nil, channelId, candidate.CandidateName, participant.GiveawayId, nil, wait)
-		err = DbMap.Insert(participant)
+		participant.MessageId = *Utils.UpdateThxInfoMessage(session, nil, channelId, candidate.CandidateName, participant.GiveawayId, nil, Utils.Wait)
+		err = Database.DbMap.Insert(participant)
 		if err != nil {
-			_, _ = session.ChannelMessageSend(channelId, "Coś poszło nie tak przy dodawaniu podziękowania :(")
-			log.Panicln("OnMessageCreate DbMap.Insert(participant) " + err.Error())
+			_, err2 := session.ChannelMessageSend(channelId, "Coś poszło nie tak przy dodawaniu podziękowania :(")
+			if err2 != nil {
+				log.Println("HandleThxmeReactions Unable to send channel message! ", err)
+			}
+			if err != nil {
+				log.Println("HandleThxmeReactions Unable to insert to database! ", err)
+			}
 		}
-		for err = session.MessageReactionAdd(channelId, participant.MessageId, "✅"); err != nil; err = session.MessageReactionAdd(channelId, participant.MessageId, "✅") {
+		err = session.MessageReactionAdd(channelId, participant.MessageId, "✅")
+		if err != nil {
+			log.Println("HandleThxmeReactions Unable to add message reaction! ", err)
 		}
-		for err = session.MessageReactionAdd(channelId, participant.MessageId, "⛔"); err != nil; err = session.MessageReactionAdd(channelId, participant.MessageId, "⛔") {
+		err = session.MessageReactionAdd(channelId, participant.MessageId, "⛔")
+		if err != nil {
+			log.Println("HandleThxmeReactions Unable to add message reaction! ", err)
 		}
 	} else if r.Emoji.Name == "⛔" {
-		log.Println(candidate.CandidateApproverName + "(" + candidate.CandidateApproverId + ") odrzucil prosbe o thx uzytkownika " + candidate.CandidateName + "(" + candidate.CandidateId + ")")
+		log.Println(candidate.CandidateApproverName + "(" + candidate.CandidateApproverId + ") refused thx request from " + candidate.CandidateName + "(" + candidate.CandidateId + ")")
 		candidate.IsAccepted.Bool = false
-		_, err := DbMap.Update(candidate)
+		_, err := Database.DbMap.Update(candidate)
 		if err != nil {
-			log.Panicln("HandleGiveawayReactions DbMap.Update(participant) " + err.Error())
+			log.Panicln("HandleThxmeReactions Unable to update in database! ", err)
 		}
 	}
 }
@@ -163,35 +214,35 @@ func OnMessageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 	args := strings.Fields(m.Content)
 	switch args[0] {
 	case "thx":
-		handleThxCommand(session, m, args)
+		Commands.HandleThxCommand(session, m, args[1:])
 	case "thxme":
-		handleThxmeCommand(session, m, args)
+		Commands.HandleThxmeCommand(session, m, args[1:])
 	case "giveaway":
-		printGiveawayInfo(session, m.ChannelID, m.GuildID)
+		Utils.PrintGiveawayInfo(session, m.ChannelID, m.GuildID)
 	case "csrvbot":
-		handleCsrvbotCommand(session, m, args)
+		Commands.HandleCsrvbotCommand(session, m, args[1:])
 	case "setwinner":
-		handleSetwinnerCommand(session, m, args)
+		Commands.HandleSetwinnerCommand(session, m, args[1:])
 	}
 }
 
 func OnGuildCreate(session *discordgo.Session, g *discordgo.GuildCreate) {
 	log.Printf("Zarejestrowałem utworzenie gildii")
-	createConfigurationIfNotExists(g.Guild.ID)
-	createMissingGiveaways(session)
-	updateAllMembersSavedRoles(session, g.Guild.ID)
+	ServerConfiguration.CreateConfigurationIfNotExists(g.Guild.ID)
+	Giveaways.CreateMissingGiveaways(session)
+	Utils.UpdateAllMembersSavedRoles(session, g.Guild.ID)
 }
 
 func OnGuildMemberUpdate(session *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 	if m.GuildID == "" {
 		return
 	}
-	updateMemberSavedRoles(m.Member, m.GuildID)
+	Utils.UpdateMemberSavedRoles(m.Member, m.GuildID)
 }
 
 func OnGuildMemberAdd(session *discordgo.Session, m *discordgo.GuildMemberAdd) {
 	if m.GuildID == "" {
 		return
 	}
-	restoreMemberRoles(session, m.Member, m.GuildID)
+	Utils.RestoreMemberRoles(session, m.Member, m.GuildID)
 }

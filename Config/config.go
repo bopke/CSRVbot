@@ -1,4 +1,4 @@
-package config
+package Config
 
 import (
 	"github.com/spf13/viper"
@@ -12,7 +12,7 @@ var (
 )
 
 func Load() error {
-	viper.SetConfigFile("config.json")
+	viper.SetConfigFile("Config.json")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
 	if err != nil {

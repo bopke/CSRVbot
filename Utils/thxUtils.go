@@ -1,8 +1,9 @@
-package utils
+package Utils
 
 import (
-	"csrvbot/config"
-	"csrvbot/giveaways"
+	"csrvbot/Config"
+	"csrvbot/Database"
+	"csrvbot/Giveaways"
 	"log"
 	"strings"
 	"time"
@@ -13,15 +14,15 @@ import (
 type State byte
 
 const (
-	wait State = iota
-	confirm
-	reject
+	Wait State = iota
+	Confirm
+	Reject
 )
 
 func IsThxMessage(messageID string) bool {
-	ret, err := DbMap.SelectInt("SELECT count(*) FROM Participants WHERE message_id = ?", messageID)
+	ret, err := Database.DbMap.SelectInt("SELECT count(*) FROM Participants WHERE message_id = ?", messageID)
 	if err != nil {
-		log.Panicln("IsThxMessage DbMap.SelectInt " + err.Error())
+		log.Panicln("Utils IsThxMessage Unable to select from database! ", err)
 	}
 	if ret == 1 {
 		return true
@@ -30,16 +31,15 @@ func IsThxMessage(messageID string) bool {
 }
 
 func IsThxmeMessage(messageID string) bool {
-	ret, err := DbMap.SelectInt("SELECT count(*) FROM ParticipantCandidates WHERE message_id = ?", messageID)
+	ret, err := Database.DbMap.SelectInt("SELECT count(*) FROM ParticipantCandidates WHERE message_id = ?", messageID)
 	if err != nil {
-		log.Panicln("IsThxmeMessage DbMap.SelectInt " + err.Error())
+		log.Panicln("Utils IsThxmeMessage Unable to select from database! ", err)
 	}
-
 	return ret == 1
 }
 
 func UpdateThxInfoMessage(session *discordgo.Session, messageId *string, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
-	splittedCronString := strings.Split(config.GiveawayCronString, " ")
+	splittedCronString := strings.Split(Config.GiveawayCronString, " ")
 	giveawayTimeString := splittedCronString[1] + ":" + splittedCronString[2]
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
@@ -53,7 +53,7 @@ func UpdateThxInfoMessage(session *discordgo.Session, messageId *string, channel
 			"To jest nasza metoda na rozruszanie tego Discorda, tak, aby każdy mógł liczyć na pomoc. " +
 			"Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
 			"**Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.**\n\n" +
-			"W aktualnym giveawayu są: " + giveaways.GetParticipantsNamesString(giveawayId) + "\n\n" +
+			"W aktualnym giveawayu są: " + Giveaways.GetParticipantsNamesString(giveawayId) + "\n\n" +
 			"Nagrody rozdajemy o " + giveawayTimeString + ", Powodzenia!",
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
@@ -61,14 +61,14 @@ func UpdateThxInfoMessage(session *discordgo.Session, messageId *string, channel
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Dodany", Value: "<@" + participantId + ">", Inline: true})
 	var status string
-	if state == wait {
+	if state == Wait {
 		status = "Oczekiwanie"
-	} else if state == confirm {
+	} else if state == Confirm {
 		if confirmerId != nil {
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Potwierdzający", Value: "<@" + *confirmerId + ">", Inline: true})
 		}
 		status = "Potwierdzono"
-	} else if state == reject {
+	} else if state == Reject {
 		if confirmerId != nil {
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Odrzucający", Value: "<@" + *confirmerId + ">", Inline: true})
 		}
@@ -80,13 +80,13 @@ func UpdateThxInfoMessage(session *discordgo.Session, messageId *string, channel
 	if messageId != nil {
 		message, err = session.ChannelMessageEditEmbed(channelId, *messageId, &embed)
 		if err != nil {
-			log.Println("UpdateThxInfoMessage session.ChannelMessageEditEmbed(" + channelId + ", " + *messageId + ", embed) " + err.Error())
+			log.Println("Utils UpdateThxInfoMessage Unable to edit channel message embed! ", err)
 			return nil
 		}
 	} else {
 		message, err = session.ChannelMessageSendEmbed(channelId, &embed)
 		if err != nil {
-			log.Println("UpdateThxInfoMessage session.ChannelMessageEditEmbed(" + channelId + ", nil, embed) " + err.Error())
+			log.Println("Utils UpdateThxInfoMessage Unable to send channel message embed! ", err)
 			return nil
 		}
 	}

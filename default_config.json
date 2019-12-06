@@ -1,5 +1,5 @@
 {
-  "mysql_string": "login:password@tcp(adres_bazy:port_polaczenia)/nazwa_bazy?parseTime=true",
+  "mysql_string": "login:password@tcp(adres_bazy:port_polaczenia)/nazwa_bazy?parseTime=true&charset=utf8mb4,utf8",
   "giveaway_cron_string": "0 19 0 * * *",
   "discord_token": "token bota",
   "csrv_secret": "secret api od kodow"

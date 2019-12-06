@@ -1,7 +1,9 @@
-package giveaways
+package Giveaways
 
 import (
-	"csrvbot/serverConfiguration"
+	"csrvbot/Database"
+	"csrvbot/ServerConfiguration"
+	"csrvbot/Utils"
 	"database/sql"
 	"github.com/bwmarrin/discordgo"
 	"log"
@@ -11,9 +13,9 @@ import (
 
 func GetGiveawayForGuild(guildId string) *Giveaway {
 	var giveaway Giveaway
-	err := database.DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guild_id = ? AND end_time IS NULL", guildId)
+	err := Database.DbMap.SelectOne(&giveaway, "SELECT * FROM Giveaways WHERE guild_id = ? AND end_time IS NULL", guildId)
 	if err != nil && err != sql.ErrNoRows {
-		log.Panicln("getGiveawayForGuild DbMap.SelectOne ", err)
+		log.Panicln("Giveaways GetGiveawayForGuild Unable to select from database! ", err)
 	}
 	if err == sql.ErrNoRows {
 		return nil
@@ -23,9 +25,9 @@ func GetGiveawayForGuild(guildId string) *Giveaway {
 
 func GetAllUnfinishedGiveaways() []Giveaway {
 	var res []Giveaway
-	_, err := database.DbMap.Select(&res, "SELECT * FROM Giveaways WHERE end_time IS NULL")
+	_, err := Database.DbMap.Select(&res, "SELECT * FROM Giveaways WHERE end_time IS NULL")
 	if err != nil {
-		log.Panicln("GetAllUnfinishedGiveaways DbMap.Select ", err)
+		log.Panicln("Giveaways GetAllUnfinishedGiveaways Unable to select from database! ", err)
 		return nil
 	}
 	return res
@@ -33,7 +35,10 @@ func GetAllUnfinishedGiveaways() []Giveaway {
 
 func CreateMissingGiveaways(session *discordgo.Session) {
 	for i := 0; i < len(session.State.Guilds); i++ {
-		guild, _ := session.Guild(session.State.Guilds[i].ID)
+		guild, err := session.Guild(session.State.Guilds[i].ID)
+		if err != nil {
+			log.Println("Giveaways CreateMissingGiveaways Unable to get guild! ", err)
+		}
 		for _, channel := range guild.Channels {
 			if channel.Name == GetGiveawayChannelNameForGuild(guild.ID) {
 				giveaway := GetGiveawayForGuild(guild.ID)
@@ -43,9 +48,9 @@ func CreateMissingGiveaways(session *discordgo.Session) {
 						GuildId:   guild.ID,
 						GuildName: guild.Name,
 					}
-					err := database.DbMap.Insert(giveaway)
+					err := Database.DbMap.Insert(giveaway)
 					if err != nil {
-						log.Panicln("CreateMissingGiveaways DbMap.Insert ", err)
+						log.Panicln("Giveaways CreateMissingGiveaways Unable to insert to database! ", err)
 					}
 				}
 				break
@@ -55,10 +60,10 @@ func CreateMissingGiveaways(session *discordgo.Session) {
 }
 
 func GetGiveawayChannelNameForGuild(guildID string) string {
-	var serverConfig serverConfiguration.ServerConfig
-	err := database.DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig")
+	var serverConfig ServerConfiguration.ServerConfig
+	err := Database.DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig WHERE guild_id = ?", guildID)
 	if err != nil {
-		log.Println("GetGiveawayChannelNameForGuild("+guildID+") ", err)
+		log.Println("Giveaways GetGiveawaysChannelNameForGuild Unable to select from database! ", err)
 		return ""
 	}
 	return serverConfig.MainChannel
@@ -68,7 +73,7 @@ func FinishGiveaway(session *discordgo.Session, guildID string) {
 	giveaway := GetGiveawayForGuild(guildID)
 	guild, err := session.Guild(giveaway.GuildId)
 	if err != nil {
-		log.Println("Nie mogę się dobrać do gildii o ID " + guildID + ", pomijam.")
+		log.Println("Giveaways FinishGiveaway Unable to get guild! ", err)
 		return
 	}
 	var giveawayChannelId string
@@ -79,24 +84,27 @@ func FinishGiveaway(session *discordgo.Session, guildID string) {
 		}
 	}
 	var participants []Participant
-	_, err = database.DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveaway.Id)
+	_, err = Database.DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveaway.Id)
 	if err != nil {
-		log.Panicln("FinishGiveaway DbMap.Select " + err.Error())
+		log.Panicln("Giveaways FinishGiveaway Unable to select from database! ", err)
 	}
 	if participants == nil || len(participants) == 0 {
 		giveaway.EndTime.Time = time.Now()
 		giveaway.EndTime.Valid = true
-		_, err := database.DbMap.Update(giveaway)
+		_, err := Database.DbMap.Update(giveaway)
 		if err != nil {
-			log.Panicln("FinishGiveaway DbMap.Select ", err)
+			log.Panicln("Giveaways FinishGiveaway Unable to select from database ", err)
 		}
 		notifyWinner(session, giveaway.GuildId, giveawayChannelId, nil, "")
 		return
 	}
-	code, err := utils.GetCSRVCode()
+	code, err := Utils.GetCSRVCode()
 	if err != nil {
-		log.Println("FinishGiveaway getCSRVCode ", err)
-		_, _ = session.ChannelMessageSend(giveawayChannelId, "Błąd API Craftserve, nie udało się pobrać kodu!")
+		log.Println("Giveaways FinishGiveaway Unable to get CSRV code! ", err)
+		_, err = session.ChannelMessageSend(giveawayChannelId, "Błąd API Craftserve, nie udało się pobrać kodu! <@205745502266851329> ")
+		if err != nil {
+			log.Println("Giveaways FinishGiveaway Unable to send channel message! ", err)
+		}
 		return
 	}
 	rand.Seed(time.Now().UnixNano())
@@ -111,8 +119,8 @@ func FinishGiveaway(session *discordgo.Session, guildID string) {
 	giveaway.WinnerId.Valid = true
 	giveaway.WinnerName.String = winner.UserName
 	giveaway.WinnerName.Valid = true
-	_, err = database.DbMap.Update(giveaway)
+	_, err = Database.DbMap.Update(giveaway)
 	if err != nil {
-		log.Panicln("FinishGiveaway DbMap.Update ", err)
+		log.Panicln("Giveaways FinishGiveaway Unable to update in database! ", err)
 	}
 }

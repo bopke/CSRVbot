@@ -1,6 +1,8 @@
-package giveaways
+package Giveaways
 
 import (
+	"csrvbot/Database"
+	"csrvbot/Utils"
 	"database/sql"
 	"github.com/bwmarrin/discordgo"
 	"log"
@@ -9,12 +11,12 @@ import (
 
 func GetParticipantsNames(giveawayId int) []string {
 	var participants []Participant
-	_, err := database.DbMap.Select(&participants, "SELECT user_name FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
+	_, err := Database.DbMap.Select(&participants, "SELECT user_name FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil
 		}
-		log.Panicln("GetParticipantsNames DbMap.Select ", err)
+		log.Panicln("Giveaways GetParticipantsNames Unable to select from database! ", err)
 	}
 	names := make([]string, len(participants))
 	for i := range participants {
@@ -25,9 +27,9 @@ func GetParticipantsNames(giveawayId int) []string {
 
 func GetParticipantByMessageId(messageId string) *Participant {
 	var participant Participant
-	err := database.DbMap.SelectOne(&participant, "SELECT * FROM Participants WHERE message_id = ?", messageId)
+	err := Database.DbMap.SelectOne(&participant, "SELECT * FROM Participants WHERE message_id = ?", messageId)
 	if err != nil && err != sql.ErrNoRows {
-		log.Panicln("GetParticipantByMessageId DbMap.SelectOne ", err)
+		log.Panicln("Giveaways GetParticipantByMessageId Unable to select from database ", err)
 	}
 	if err == sql.ErrNoRows {
 		return nil
@@ -37,12 +39,12 @@ func GetParticipantByMessageId(messageId string) *Participant {
 
 func GetParticipantsByGiveawayId(giveawayId int) []Participant {
 	var participants []Participant
-	_, err := database.DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
+	_, err := Database.DbMap.Select(&participants, "SELECT * FROM Participants WHERE giveaway_id = ? AND is_accepted = true", giveawayId)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil
 		}
-		log.Panicln("GetParticipantsByGiveawayId DbMap.Select ", err)
+		log.Panicln("Giveaways GetParticipantsByGiveawayId Unable to select from database! ", err)
 	}
 	return participants
 }
@@ -55,26 +57,29 @@ func GetParticipantsNamesString(giveawayId int) string {
 	return strings.Join(participants, ", ")
 }
 
-func notifyWinner(session *discordgo.Session, guildID, channelID, winnerID, code string) string {
+func notifyWinner(session *discordgo.Session, guildID, channelID string, winnerID *string, code string) string {
 	guild, err := session.Guild(guildID)
 	var guildName string
 	if err != nil {
-		log.Println("notifyWinner session.Guild(" + guildID + ") " + err.Error())
+		log.Println("Giveaways notifyWinner Unable to get guild! ", err)
 		guildName = guildID
 	} else {
 		guildName = guild.Name
 	}
 	if winnerID == nil {
-		log.Println("Giveaway na " + guildName + " zakończył się bez uczestników.")
-		message, _ := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
+		log.Println("Giveaway on " + guildName + " finished without participants.")
+		message, err := session.ChannelMessageSend(channelID, "Dzisiaj nikt nie wygrywa, ponieważ nikt nie pomagał ;(")
+		if err != nil {
+			log.Println("Giveaways notifyWinner Unable to send channel message! ", err)
+		}
 		return message.ID
 	}
 	winner, err := session.GuildMember(guildID, *winnerID)
 	if err != nil {
-		log.Println("notifyWinner session.GuildMember(" + guildID + ", " + *winnerID + ") " + err.Error())
+		log.Println("Giveaways notifyWinner Unable to get guild member! ", err)
 		return ""
 	}
-	log.Println(winner.User.Username + " wygrał giveaway na " + guild.Name + ". Kod: " + code)
+	log.Println(winner.User.Username + " have won giveaway on " + guild.Name + ". Code: " + code)
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -85,8 +90,15 @@ func notifyWinner(session *discordgo.Session, guildID, channelID, winnerID, code
 	}
 	embed.Fields = []*discordgo.MessageEmbedField{}
 	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "KOD:", Value: code})
-	dm, _ := session.UserChannelCreate(*winnerID)
-	_, _ = session.ChannelMessageSendEmbed(dm.ID, &embed)
+	dm, err := session.UserChannelCreate(*winnerID)
+	if err != nil {
+		log.Println("Giveaways notifyWinner Unable to create user channel! ", err)
+		return ""
+	}
+	_, err = session.ChannelMessageSendEmbed(dm.ID, &embed)
+	if err != nil {
+		log.Println("Giveaways notifyWinner Unable to send embed channel message! ", err)
+	}
 	embed = discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -95,7 +107,11 @@ func notifyWinner(session *discordgo.Session, guildID, channelID, winnerID, code
 		},
 		Description: winner.User.Username + " wygrał kod. Moje gratulacje ;)",
 	}
-	message, _ := session.ChannelMessageSendEmbed(channelID, &embed)
+	message, err := session.ChannelMessageSendEmbed(channelID, &embed)
+	if err != nil {
+		log.Println("Giveaways notifyWinner Unable to send embed channel message! ", err)
+		return ""
+	}
 	return message.ID
 }
 
@@ -106,14 +122,14 @@ func DeleteParticipantFromGiveaway(session *discordgo.Session, guildID, userID s
 		if participant.UserId == userID {
 			participant.IsAccepted.Valid = true
 			participant.IsAccepted.Bool = false
-			_, err := database.DbMap.Update(&participant)
+			_, err := Database.DbMap.Update(&participant)
 			if err != nil {
 				log.Panicln(err)
 			}
 		}
 	}
 	for _, participant := range participants {
-		updateThxInfoMessage(session, &participant.MessageId, participant.ChannelId, participant.UserId, participant.GiveawayId, nil, reject)
+		Utils.UpdateThxInfoMessage(session, &participant.MessageId, participant.ChannelId, participant.UserId, participant.GiveawayId, nil, Utils.Reject)
 	}
 	return
 }

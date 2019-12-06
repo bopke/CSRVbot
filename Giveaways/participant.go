@@ -1,4 +1,4 @@
-package giveaways
+package Giveaways
 
 import (
 	"database/sql"

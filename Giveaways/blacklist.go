@@ -1,4 +1,4 @@
-package giveaways
+package Giveaways
 
 type Blacklist struct {
 	Id            int    `db:"id,primarykey,autoincrement"`
