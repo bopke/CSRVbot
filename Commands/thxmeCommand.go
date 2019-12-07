@@ -54,7 +54,7 @@ func HandleThxmeCommand(session *discordgo.Session, m *discordgo.MessageCreate, 
 		GuildId:               m.GuildID,
 		ChannelId:             m.ChannelID,
 	}
-	messageId, err := session.ChannelMessageSend(m.ChannelID, m.Mentions[0].Mention()+", czy chcesz podziękować użytkownikowi "+m.Author.Mention()+"?")
+	messageId, err := session.ChannelMessageSend(m.ChannelID, m.Mentions[0].Mention()+", czy chcesz podziękować użytkownikowi "+m.Author.Mention()+"? Kliknij reakcję")
 	if err != nil {
 		log.Println("Commands HandleThxmeCommand Unable to send channel message! ", err)
 	}

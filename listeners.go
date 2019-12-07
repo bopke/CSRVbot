@@ -101,7 +101,7 @@ func HandleThxmeReactions(session *discordgo.Session, r *discordgo.MessageReacti
 	if err != nil {
 		log.Println("HandleThxmeReactions Unable to get guild member! ", err)
 	}
-	if r.UserID != candidate.CandidateApproverId || !Utils.HasAdminPermissions(session, member, r.GuildID) {
+	if r.UserID != candidate.CandidateApproverId && !Utils.HasAdminPermissions(session, member, r.GuildID) {
 		err = session.MessageReactionRemove(r.ChannelID, r.MessageID, r.Emoji.Name, r.UserID)
 		if err != nil {
 			log.Println("HandleThxmeReactions Unable to remove message reaction! ", err)
@@ -228,7 +228,7 @@ func OnMessageCreate(session *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func OnGuildCreate(session *discordgo.Session, g *discordgo.GuildCreate) {
-	log.Printf("Zarejestrowałem utworzenie gildii")
+	log.Printf("Registered new guild")
 	ServerConfiguration.CreateConfigurationIfNotExists(g.Guild.ID)
 	Giveaways.CreateMissingGiveaways(session)
 	Utils.UpdateAllMembersSavedRoles(session, g.Guild.ID)

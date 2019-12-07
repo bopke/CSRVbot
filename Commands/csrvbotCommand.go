@@ -8,7 +8,7 @@ import (
 )
 
 func HandleCsrvbotCommand(session *discordgo.Session, m *discordgo.MessageCreate, args []string) {
-	if len(args) >= 2 {
+	if len(args) >= 1 {
 		switch args[0] {
 		case "info":
 			CsrvbotSubcommands.HandleInfoCommand(session, m, args[1:])
