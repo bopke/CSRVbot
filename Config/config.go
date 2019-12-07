@@ -12,7 +12,7 @@ var (
 )
 
 func Load() error {
-	viper.SetConfigFile("Config.json")
+	viper.SetConfigFile("config.json")
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
 	if err != nil {
