@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -18,12 +16,11 @@ import (
 )
 
 type Config struct {
-	MysqlString   string `json:"mysql_string"`
-	GiveawayTimeS string `json:"giveaway_time"`
-	GiveawayTimeH int    `json:"-"`
-	GiveawayTimeM int    `json:"-"`
-	SystemToken   string `json:"system_token"`
-	CsrvSecret    string `json:"csrv_secret"`
+	MysqlString        string `json:"mysql_string"`
+	GiveawayCron       string `json:"cron_line"`
+	GiveawayTimeString string `json:"giveaway_time_string"`
+	SystemToken        string `json:"system_token"`
+	CsrvSecret         string `json:"csrv_secret"`
 }
 
 var config Config
@@ -40,23 +37,6 @@ func loadConfig() (c Config) {
 	if err != nil {
 		log.Panic("loadConfig Decoder.Decode(&c) " + err.Error())
 	}
-	colon := strings.Index(c.GiveawayTimeS, ":")
-	h, err := strconv.Atoi(c.GiveawayTimeS[:colon])
-	if err != nil {
-		log.Panic("loadConfig strconv.Atoi(" + c.GiveawayTimeS[:colon] + ") " + err.Error())
-	}
-	if h > 23 || h < 0 {
-		panic("Hour must be greater or equal 0 and less than 24!")
-	}
-	m, err := strconv.Atoi(c.GiveawayTimeS[colon+1:])
-	if err != nil {
-		log.Panic("loadConfig strconv.Atoi(" + c.GiveawayTimeS[colon+1:] + ") " + err.Error())
-	}
-	if m > 59 || m < 0 {
-		log.Panic("Minutes must be greater or equal 0 and less than 60!")
-	}
-	c.GiveawayTimeM = m
-	c.GiveawayTimeH = h
 	return
 }
 
@@ -90,7 +70,7 @@ func main() {
 	}
 
 	c := cron.New()
-	_ = c.AddFunc(fmt.Sprintf("0 %d %d * * *", config.GiveawayTimeM, config.GiveawayTimeH), finishGiveaways)
+	_ = c.AddFunc(config.GiveawayCron, finishGiveaways)
 	c.Start()
 
 	log.Println("Wystartowałem")
@@ -141,7 +121,7 @@ func printGiveawayInfo(channelID, guildID string) *discordgo.Message {
 		"Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.\n\n" +
 		"Uczestnicy: " +
 		getParticipantsNamesString(getGiveawayForGuild(guildID).Id) +
-		"\n\nNagrody rozdajemy o " + config.GiveawayTimeS + ", Powodzenia!"
+		"\n\nNagrody rozdajemy o " + config.GiveawayTimeString + ", Powodzenia!"
 	embed := &discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",

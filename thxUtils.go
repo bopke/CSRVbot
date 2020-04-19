@@ -49,7 +49,7 @@ func updateThxInfoMessage(messageId *string, channelId, participantId string, gi
 			"Każde podziękowanie to jeden los, więc warto pomagać!\n\n" +
 			"**Pomoc musi odbywać się na tym serwerze na tekstowych kanałach publicznych.**\n\n" +
 			"W aktualnym giveawayu są: " + getParticipantsNamesString(giveawayId) + "\n\n" +
-			"Nagrody rozdajemy o " + config.GiveawayTimeS + ", Powodzenia!",
+			"Nagrody rozdajemy o " + config.GiveawayTimeString + ", Powodzenia!",
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
 	embed.Color = 0x234d20
