@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"time"
 
@@ -85,13 +86,18 @@ func updateThxInfoMessage(messageId *string, guildId, channelId, participantId s
 			return nil
 		}
 	}
-	if messageId == nil {
-		notifyThxOnThxInfoChannel(guildId, channelId, message.ID, participantId)
-	}
+	notifyThxOnThxInfoChannel(guildId, channelId, message.ID, participantId, confirmerId, state)
 	return &message.ID
 }
 
-func notifyThxOnThxInfoChannel(guildId, channelId, MessageId, participantId string) {
+func notifyThxOnThxInfoChannel(guildId, channelId, messageId, participantId string, confirmerId *string, state State) {
+	notificationText := "Nowy thx!\nDla: <@" + participantId + ">\nKanał: <#" + channelId + ">\nLink: https://discordapp.com/channels/" + guildId + "/" + channelId + "/" + messageId
+	if state == reject {
+		notificationText += "\n\n**ODRZUCONE PRZEZ <@" + *confirmerId + ">**"
+	}
+	if state == confirm {
+		notificationText += "\n\n**ZATWIERDZONE PRZEZ <@" + *confirmerId + ">**"
+	}
 	var serverConfig ServerConfig
 	err := DbMap.SelectOne(&serverConfig, "SELECT * from ServerConfig WHERE guild_id=?", guildId)
 	if err != nil {
@@ -101,9 +107,29 @@ func notifyThxOnThxInfoChannel(guildId, channelId, MessageId, participantId stri
 	if serverConfig.ThxInfoChannel == "" {
 		return
 	}
-	notificationText := "Nowy thx!\nDla: <@" + participantId + ">\nKanał: <#" + channelId + ">\nLink: https://discordapp.com/channels/" + guildId + "/" + channelId + "/" + MessageId
-	_, err = session.ChannelMessageSend(serverConfig.ThxInfoChannel, notificationText)
+
+	var thxNotification ThxNotification
+	err = DbMap.SelectOne(&thxNotification, "SELECT * from ThxNotifications WHERE message_id=?", messageId)
+	if err == sql.ErrNoRows {
+
+		message, err := session.ChannelMessageSend(serverConfig.ThxInfoChannel, notificationText)
+		if err != nil {
+			log.Println("notifyThxOnThxInfoChannel Unable to send thx info! ", err)
+			return
+		}
+		thxNotification = ThxNotification{
+			MessageId:                messageId,
+			ThxNotificationMessageId: message.ID,
+		}
+		err = DbMap.Insert(&thxNotification)
+		if err != nil {
+			log.Println("notifyThxOnThxInfoChannel Unable to insert to database! ", err)
+			return
+		}
+		return
+	}
+	_, err = session.ChannelMessageEdit(serverConfig.ThxInfoChannel, thxNotification.ThxNotificationMessageId, notificationText)
 	if err != nil {
-		log.Println("notifyThxOnThxInfoChannel Unable to send thx info! ", err)
+		log.Println("notifyThxOnThxInfoChannel Unable to edit message! ", err)
 	}
 }
