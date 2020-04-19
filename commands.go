@@ -51,7 +51,7 @@ func handleThxCommand(m *discordgo.MessageCreate, args []string) {
 	}
 	participant.GuildName = guild.Name
 	participant.UserName = user.Username
-	participant.MessageId = *updateThxInfoMessage(nil, m.ChannelID, args[1], participant.GiveawayId, nil, wait)
+	participant.MessageId = *updateThxInfoMessage(nil, m.GuildID, m.ChannelID, args[1], participant.GiveawayId, nil, wait)
 	err = DbMap.Insert(participant)
 	if err != nil {
 		_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
@@ -253,6 +253,35 @@ func handleCsrvbotCommand(s *discordgo.Session, m *discordgo.MessageCreate, args
 			}
 			_, _ = s.ChannelMessageSend(m.ChannelID, "Ustawiono.")
 			return
+		case "setThxInfoChannel":
+			member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+			if err != nil {
+				log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
+				return
+			}
+			if !hasAdminPermissions(member, m.GuildID) {
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+				return
+			}
+			if len(args) == 2 {
+				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać kanał!")
+				if err != nil {
+					log.Println(err)
+				}
+				return
+			}
+			serverConfig := getServerConfigForGuildId(m.GuildID)
+			if strings.HasPrefix(args[2], "<#") {
+				args[2] = args[2][2:]
+				args[2] = args[2][:len(args[2])-1]
+			}
+			serverConfig.ThxInfoChannel = args[2]
+			_, err = DbMap.Update(&serverConfig)
+			if err != nil {
+				log.Panic("OnMessageCreate DbMap.Update(&serverConfig) " + err.Error())
+			}
+			_, _ = s.ChannelMessageSend(m.ChannelID, "Ustawiono.")
+			return
 		case "resend":
 			embed, err := generateResendEmbed(m.Message.Author.ID)
 			if err != nil {
@@ -265,7 +294,7 @@ func handleCsrvbotCommand(s *discordgo.Session, m *discordgo.MessageCreate, args
 			return
 		}
 	}
-	_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|unblacklist|setGiveawayChannelName|setBotAdminRoleName|info>")
+	_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|unblacklist|setGiveawayChannelName|setBotAdminRoleName|setThxInfoChannel|info>")
 }
 
 func handleSetwinnerCommand(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {

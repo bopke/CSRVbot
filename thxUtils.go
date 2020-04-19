@@ -35,7 +35,7 @@ func isThxmeMessage(messageID string) bool {
 	return ret == 1
 }
 
-func updateThxInfoMessage(messageId *string, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
+func updateThxInfoMessage(messageId *string, guildId, channelId, participantId string, giveawayId int, confirmerId *string, state State) *string {
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
 			URL:     "https://craftserve.pl",
@@ -85,5 +85,25 @@ func updateThxInfoMessage(messageId *string, channelId, participantId string, gi
 			return nil
 		}
 	}
+	if messageId == nil {
+		notifyThxOnThxInfoChannel(guildId, channelId, message.ID, participantId)
+	}
 	return &message.ID
+}
+
+func notifyThxOnThxInfoChannel(guildId, channelId, MessageId, participantId string) {
+	var serverConfig ServerConfig
+	err := DbMap.SelectOne(&serverConfig, "SELECT * from ServerConfig WHERE guild_id=?", guildId)
+	if err != nil {
+		log.Println("notifyThxOnThxInfoChannel Unable to read from database! ", err)
+		return
+	}
+	if serverConfig.ThxInfoChannel == "" {
+		return
+	}
+	notificationText := "Nowy thx!\nDla: <@" + participantId + ">\nKanał: <#" + channelId + ">\nLink: https://discordapp.com/channels/" + guildId + "/" + channelId + "/" + MessageId
+	_, err = session.ChannelMessageSend(serverConfig.ThxInfoChannel, notificationText)
+	if err != nil {
+		log.Println("notifyThxOnThxInfoChannel Unable to send thx info! ", err)
+	}
 }

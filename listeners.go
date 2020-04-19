@@ -47,7 +47,7 @@ func HandleGiveawayReactions(s *discordgo.Session, r *discordgo.MessageReactionA
 			if err != nil {
 				log.Panicln(err)
 			}
-			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, confirm)
+			updateThxInfoMessage(&r.MessageID, r.GuildID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, confirm)
 		} else if r.Emoji.Name == "⛔" {
 			log.Println(member.User.Username + "(" + member.User.ID + ") odrzucił udział " + participant.UserName + "(" + participant.UserId + ") w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
 			participant.IsAccepted.Bool = false
@@ -55,7 +55,7 @@ func HandleGiveawayReactions(s *discordgo.Session, r *discordgo.MessageReactionA
 			if err != nil {
 				log.Panicln("HandleGiveawayReactions DbMap.Update(participant) " + err.Error())
 			}
-			updateThxInfoMessage(&r.MessageID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, reject)
+			updateThxInfoMessage(&r.MessageID, r.GuildID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, reject)
 		}
 		return
 	} else {
@@ -120,7 +120,7 @@ func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			GuildName:  candidate.GuildName,
 			ChannelId:  channelId,
 		}
-		participant.MessageId = *updateThxInfoMessage(nil, channelId, candidate.CandidateName, participant.GiveawayId, nil, wait)
+		participant.MessageId = *updateThxInfoMessage(nil, r.GuildID, channelId, candidate.CandidateName, participant.GiveawayId, nil, wait)
 		err = DbMap.Insert(participant)
 		if err != nil {
 			_, _ = session.ChannelMessageSend(channelId, "Coś poszło nie tak przy dodawaniu podziękowania :(")
