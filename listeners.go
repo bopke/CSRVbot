@@ -47,6 +47,7 @@ func HandleGiveawayReactions(s *discordgo.Session, r *discordgo.MessageReactionA
 			if err != nil {
 				log.Panicln(err)
 			}
+			checkHelper(r.GuildID, participant.UserId)
 			updateThxInfoMessage(&r.MessageID, r.GuildID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, confirm)
 		} else if r.Emoji.Name == "⛔" {
 			log.Println(member.User.Username + "(" + member.User.ID + ") odrzucił udział " + participant.UserName + "(" + participant.UserId + ") w giveawayu o ID " + fmt.Sprintf("%d", participant.GiveawayId))
@@ -55,6 +56,7 @@ func HandleGiveawayReactions(s *discordgo.Session, r *discordgo.MessageReactionA
 			if err != nil {
 				log.Panicln("HandleGiveawayReactions DbMap.Update(participant) " + err.Error())
 			}
+			checkHelper(r.GuildID, participant.UserId)
 			updateThxInfoMessage(&r.MessageID, r.GuildID, r.ChannelID, participant.UserId, participant.GiveawayId, &r.UserID, reject)
 		}
 		return
@@ -180,6 +182,7 @@ func OnGuildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
 	createConfigurationIfNotExists(g.Guild.ID)
 	createMissingGiveaways()
 	updateAllMembersSavedRoles(g.Guild.ID)
+	checkHelpers(g.Guild.ID)
 }
 
 func OnGuildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {

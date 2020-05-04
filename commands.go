@@ -4,6 +4,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -292,9 +293,66 @@ func handleCsrvbotCommand(s *discordgo.Session, m *discordgo.MessageCreate, args
 			_, _ = s.ChannelMessageSend(m.ChannelID, "Kody zostaly ponownie wyslane :innocent:")
 			log.Println("Wysłano resend do " + m.Author.Username + "#" + m.Author.Discriminator)
 			return
+		case "setHelperRoleName":
+			member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+			if err != nil {
+				log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
+				return
+			}
+			if !hasAdminPermissions(member, m.GuildID) {
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+				return
+			}
+			if len(args) == 2 {
+				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać nazwę roli!")
+				if err != nil {
+					log.Println(err)
+				}
+				return
+			}
+			serverConfig := getServerConfigForGuildId(m.GuildID)
+			serverConfig.HelperRoleName = args[2]
+			_, err = DbMap.Update(&serverConfig)
+			if err != nil {
+				log.Panic("OnMessageCreate DbMap.Update(&serverConfig) " + err.Error())
+			}
+			_, _ = s.ChannelMessageSend(m.ChannelID, "Ustawiono.")
+			return
+		case "setHelperRoleNeededThxAmount":
+			member, err := s.GuildMember(m.GuildID, m.Message.Author.ID)
+			if err != nil {
+				log.Println("OnMessageCreate s.GuildMember(" + m.GuildID + ", " + m.Message.Author.ID + ") " + err.Error())
+				return
+			}
+			if !hasAdminPermissions(member, m.GuildID) {
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Brak uprawnień.")
+				return
+			}
+			if len(args) == 2 {
+				_, err := s.ChannelMessageSend(m.ChannelID, "Musisz podać nazwę roli!")
+				if err != nil {
+					log.Println(err)
+				}
+				return
+			}
+			serverConfig := getServerConfigForGuildId(m.GuildID)
+			num, err := strconv.Atoi(args[2])
+			if err != nil {
+				_, _ = s.ChannelMessageSend(m.ChannelID, "Ale moze liczbe daj co")
+				return
+			}
+			serverConfig.HelperRoleThxesNeeded = num
+			_, err = DbMap.Update(&serverConfig)
+			if err != nil {
+				log.Panic("OnMessageCreate DbMap.Update(&serverConfig) " + err.Error())
+			}
+			_, _ = s.ChannelMessageSend(m.ChannelID, "Ustawiono.")
+			checkHelpers(m.GuildID)
+			return
 		}
+
 	}
-	_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|unblacklist|setGiveawayChannelName|setBotAdminRoleName|setThxInfoChannel|info>")
+	_, _ = s.ChannelMessageSend(m.ChannelID, "!csrvbot <delete|resend|start|blacklist|unblacklist|setGiveawayChannelName|setBotAdminRoleName|setThxInfoChannel|info|setHelperRoleName|setHelperRoleNeededThxAmount>")
 }
 
 func handleSetwinnerCommand(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {

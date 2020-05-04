@@ -84,6 +84,105 @@ func main() {
 	}
 }
 
+func checkHelper(guildId, memberId string) {
+	serverConfig := getServerConfigForGuildId(guildId)
+	if serverConfig.HelperRoleThxesNeeded <= 0 {
+		return
+	}
+	if serverConfig.HelperRoleName == "" {
+		return
+	}
+
+	member, err := session.GuildMember(guildId, memberId)
+
+	type data struct {
+		UserId    string `db:"user_id,size:255"`
+		ThxAmount int    `db:"amount"`
+	}
+	var helpers []data
+	_, err = DbMap.Select(&helpers, "SELECT * FROM (SELECT user_id, count(*) AS amount FROM Participants WHERE guild_id=? AND user_id=? AND is_accepted=1 GROUP BY user_id) AS a WHERE amount > ?", serverConfig.GuildId, memberId, serverConfig.HelperRoleThxesNeeded)
+	if err != nil {
+		log.Println("checkHelper Blad pobieranai danych z bazy ", err)
+	}
+
+	roleId, err := getRoleID(guildId, serverConfig.HelperRoleName)
+
+	if len(helpers) > 0 {
+		for _, memberRole := range member.Roles {
+			if memberRole == roleId {
+				continue
+			}
+		}
+		err = session.GuildMemberRoleAdd(guildId, member.User.ID, roleId)
+		if err != nil {
+			log.Println("checkHelpers Unable to give user helper role :(")
+		}
+	} else {
+		for _, memberRole := range member.Roles {
+			if memberRole == roleId {
+				err = session.GuildMemberRoleRemove(guildId, member.User.ID, roleId)
+				if err != nil {
+					log.Println("checkHelpers Unable to remove user helper role :(")
+				}
+			}
+		}
+	}
+}
+
+func checkHelpers(guildId string) {
+	serverConfig := getServerConfigForGuildId(guildId)
+	if serverConfig.HelperRoleThxesNeeded <= 0 {
+		return
+	}
+	if serverConfig.HelperRoleName == "" {
+		return
+	}
+
+	members := getAllMembers(guildId)
+
+	type data struct {
+		UserId    string `db:"user_id,size:255"`
+		ThxAmount int    `db:"amount"`
+	}
+	var helpers []data
+	_, err := DbMap.Select(&helpers, "SELECT * FROM (SELECT user_id, count(*) AS amount FROM Participants WHERE guild_id=? AND is_accepted=1 GROUP BY user_id) AS a WHERE amount > ?", serverConfig.GuildId, serverConfig.HelperRoleThxesNeeded)
+	if err != nil {
+		log.Println("")
+	}
+
+	roleId, err := getRoleID(guildId, serverConfig.HelperRoleName)
+
+	for _, member := range members {
+		shouldHaveRole := false
+		for _, helper := range helpers {
+			if helper.UserId == member.User.ID {
+				shouldHaveRole = true
+				break
+			}
+		}
+		if shouldHaveRole {
+			for _, memberRole := range member.Roles {
+				if memberRole == roleId {
+					continue
+				}
+			}
+			err = session.GuildMemberRoleAdd(guildId, member.User.ID, roleId)
+			if err != nil {
+				log.Println("checkHelpers Unable to give user helper role :(")
+			}
+		} else {
+			for _, memberRole := range member.Roles {
+				if memberRole == roleId {
+					err = session.GuildMemberRoleRemove(guildId, member.User.ID, roleId)
+					if err != nil {
+						log.Println("checkHelpers Unable to remove user helper role :(")
+					}
+				}
+			}
+		}
+	}
+}
+
 func printServerInfo(channelID, guildID string) *discordgo.Message {
 	embed := discordgo.MessageEmbed{
 		Author: &discordgo.MessageEmbedAuthor{
@@ -186,6 +285,8 @@ func createConfigurationIfNotExists(guildID string) {
 		serverConfig.GuildId = guildID
 		serverConfig.MainChannel = "giveaway"
 		serverConfig.AdminRole = "CraftserveBotAdmin"
+		serverConfig.HelperRoleName = ""
+		serverConfig.HelperRoleThxesNeeded = 0
 		err = DbMap.Insert(&serverConfig)
 	}
 	if err != nil {
@@ -194,7 +295,7 @@ func createConfigurationIfNotExists(guildID string) {
 }
 
 func getServerConfigForGuildId(guildID string) (serverConfig ServerConfig) {
-	err := DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig")
+	err := DbMap.SelectOne(&serverConfig, "SELECT * FROM ServerConfig WHERE guild_id=?", guildID)
 	if err != nil {
 		log.Panicln("createConfigurationIfNotExists DbMap.SelectOne " + err.Error())
 	}

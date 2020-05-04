@@ -59,11 +59,13 @@ type Blacklist struct {
 }
 
 type ServerConfig struct {
-	Id             int    `db:"id,primarykey,autoincrement"`
-	GuildId        string `db:"guild_id,size:255"`
-	AdminRole      string `db:"admin_role,size:255"`
-	MainChannel    string `db:"main_channel,size:255"`
-	ThxInfoChannel string `db:"thx_info_channel,size:255"`
+	Id                    int    `db:"id,primarykey,autoincrement"`
+	GuildId               string `db:"guild_id,size:255"`
+	AdminRole             string `db:"admin_role,size:255"`
+	MainChannel           string `db:"main_channel,size:255"`
+	ThxInfoChannel        string `db:"thx_info_channel,size:255"`
+	HelperRoleName        string `db:"helper_role_name,size:255"`
+	HelperRoleThxesNeeded int    `db:"helper_role_thxes_needed"`
 }
 
 type MemberRole struct {
