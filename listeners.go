@@ -152,6 +152,11 @@ func OnMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	if m.Content == "siema bot" {
+		_, _ = s.ChannelMessageSend(m.ChannelID, "Siema, "+m.Author.Mention())
+		return
+	}
+
 	if !strings.HasPrefix(m.Content, "!") {
 		return
 	}
