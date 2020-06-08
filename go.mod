@@ -12,6 +12,7 @@ require (
 	github.com/ziutek/mymysql v1.5.4 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
 	gopkg.in/gorp.v2 v2.0.0
+	gopkg.in/yaml.v2 v2.2.1
 )
 
 go 1.13
