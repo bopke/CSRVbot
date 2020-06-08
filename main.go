@@ -3,7 +3,10 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -16,27 +19,52 @@ import (
 )
 
 type Config struct {
-	MysqlString        string `json:"mysql_string"`
-	GiveawayCron       string `json:"cron_line"`
-	GiveawayTimeString string `json:"giveaway_time_string"`
-	SystemToken        string `json:"system_token"`
-	CsrvSecret         string `json:"csrv_secret"`
+	MysqlString        string `yaml:"mysql_string",json:"mysql_string"`
+	GiveawayCron       string `yaml:"cron_line",json:"cron_line"`
+	GiveawayTimeString string `yaml:"giveaway_time_string",json:"giveaway_time_string"`
+	SystemToken        string `yaml:"system_token",json:"system_token"`
+	CsrvSecret         string `yaml:"csrv_secret",json:"csrv_secret"`
 }
 
 var config Config
 
 var session *discordgo.Session
 
+var configFileNames = []string{"config.json", "config.yml"}
+
+func discoveryConfig() (string, bool) {
+	for _, f := range configFileNames {
+		info, err := os.Stat(f)
+		if err != nil {
+			continue
+		}
+
+		if info.IsDir() {
+			continue
+		}
+
+		return f, true
+	}
+
+	return "", false
+}
+
 func loadConfig() (c Config) {
-	configFile, err := os.Open("config.json")
+	configFileName, found := discoveryConfig()
+	if !found {
+		log.Panic(errors.New("config not found"))
+	}
+
+	data, err := ioutil.ReadFile(configFileName)
 	if err != nil {
 		log.Panic(err)
 	}
-	defer configFile.Close()
-	err = json.NewDecoder(configFile).Decode(&c)
+
+	err = yaml.Unmarshal(data, &c)
 	if err != nil {
-		log.Panic("loadConfig Decoder.Decode(&c) " + err.Error())
+		log.Panic(err)
 	}
+
 	return
 }
 
