@@ -19,11 +19,11 @@ import (
 )
 
 type Config struct {
-	MysqlString        string `yaml:"mysql_string",json:"mysql_string"`
-	GiveawayCron       string `yaml:"cron_line",json:"cron_line"`
-	GiveawayTimeString string `yaml:"giveaway_time_string",json:"giveaway_time_string"`
-	SystemToken        string `yaml:"system_token",json:"system_token"`
-	CsrvSecret         string `yaml:"csrv_secret",json:"csrv_secret"`
+	MysqlString        string `yaml:"mysql_string"`
+	GiveawayCron       string `yaml:"cron_line"`
+	GiveawayTimeString string `yaml:"giveaway_time_string"`
+	SystemToken        string `yaml:"system_token"`
+	CsrvSecret         string `yaml:"csrv_secret"`
 }
 
 var config Config
