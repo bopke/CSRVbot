@@ -91,13 +91,31 @@ func updateThxInfoMessage(messageId *string, guildId, channelId, participantId s
 }
 
 func notifyThxOnThxInfoChannel(guildId, channelId, messageId, participantId string, confirmerId *string, state State) {
-	notificationText := "Nowy thx!\nDla: <@" + participantId + ">\nKanał: <#" + channelId + ">\nLink: https://discordapp.com/channels/" + guildId + "/" + channelId + "/" + messageId
-	if state == reject {
-		notificationText += "\n\n**ODRZUCONE PRZEZ <@" + *confirmerId + ">**"
+	embed := discordgo.MessageEmbed{
+		Timestamp: time.Now().Format(time.RFC3339),
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://craftserve.pl",
+			Name:    "Nowe podziękowanie",
+			IconURL: "https://cdn.discordapp.com/avatars/524308413719642118/c2a17b4479bfcc89d2b7e64e6ae15ebe.webp",
+		},
+		Color: 0x234d20,
 	}
-	if state == confirm {
-		notificationText += "\n\n**ZATWIERDZONE PRZEZ <@" + *confirmerId + ">**"
+	embed.Fields = []*discordgo.MessageEmbedField{}
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Dla", Value: "<@" + participantId + ">", Inline: true})
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Kanał", Value: "<#" + channelId + ">", Inline: true})
+	if state == wait {
+		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Status", Value: "Oczekiwanie", Inline: true})
+	} else if state == confirm {
+		if confirmerId != nil {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Status", Value: "Potwierdzono przez <@" + *confirmerId + ">", Inline: true})
+		}
+	} else if state == reject {
+		if confirmerId != nil {
+			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Status", Value: "Odrzucono przez <@" + *confirmerId + ">", Inline: true})
+		}
 	}
+	embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: "Link", Value: "https://discordapp.com/channels/" + guildId + "/" + channelId + "/" + messageId, Inline: false})
+
 	var serverConfig ServerConfig
 	err := DbMap.SelectOne(&serverConfig, "SELECT * from ServerConfig WHERE guild_id=?", guildId)
 	if err != nil {
@@ -112,7 +130,7 @@ func notifyThxOnThxInfoChannel(guildId, channelId, messageId, participantId stri
 	err = DbMap.SelectOne(&thxNotification, "SELECT * from ThxNotifications WHERE message_id=?", messageId)
 	if err == sql.ErrNoRows {
 
-		message, err := session.ChannelMessageSend(serverConfig.ThxInfoChannel, notificationText)
+		message, err := session.ChannelMessageSendEmbed(serverConfig.ThxInfoChannel, &embed)
 		if err != nil {
 			log.Println("notifyThxOnThxInfoChannel Unable to send thx info! ", err)
 			return
@@ -128,8 +146,8 @@ func notifyThxOnThxInfoChannel(guildId, channelId, messageId, participantId stri
 		}
 		return
 	}
-	_, err = session.ChannelMessageEdit(serverConfig.ThxInfoChannel, thxNotification.ThxNotificationMessageId, notificationText)
+	_, err = session.ChannelMessageEditEmbed(serverConfig.ThxInfoChannel, thxNotification.ThxNotificationMessageId, &embed)
 	if err != nil {
-		log.Println("notifyThxOnThxInfoChannel Unable to edit message! ", err)
+		log.Println("notifyThxOnThxInfoChannel Unable to edit embed! ", err)
 	}
 }
