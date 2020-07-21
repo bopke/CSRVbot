@@ -18,14 +18,14 @@ func HandleGiveawayReactions(s *discordgo.Session, r *discordgo.MessageReactionA
 	}
 	member, _ := s.GuildMember(r.GuildID, r.UserID)
 	if hasAdminPermissions(member, r.GuildID) && (r.Emoji.Name == "✅" || r.Emoji.Name == "⛔") {
-		reactionists, _ := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
+		reactionists, _ := session.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10, "", "")
 		for _, user := range reactionists {
 			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
 				continue
 			}
 			_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
 		}
-		reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
+		reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10, "", "")
 		for _, user := range reactionists {
 			if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "✅") {
 				continue
@@ -80,7 +80,7 @@ func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		return
 	}
 
-	reactionists, _ := s.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10)
+	reactionists, _ := s.MessageReactions(r.ChannelID, r.MessageID, "⛔", 10, "", "")
 	for _, user := range reactionists {
 		if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "⛔") {
 			continue
@@ -88,7 +88,7 @@ func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 
 		_ = s.MessageReactionRemove(r.ChannelID, r.MessageID, "⛔", user.ID)
 	}
-	reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10)
+	reactionists, _ = session.MessageReactions(r.ChannelID, r.MessageID, "✅", 10, "", "")
 	for _, user := range reactionists {
 		if user.ID == session.State.User.ID || (user.ID == r.UserID && r.MessageReaction.Emoji.Name == "✅") {
 			continue
