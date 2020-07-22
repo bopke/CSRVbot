@@ -27,7 +27,11 @@ func handleThxCommand(m *discordgo.MessageCreate, args []string) {
 		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można dziękować sobie!")
 		return
 	}
-	user, _ := session.User(args[1])
+	user, err := session.User(args[1])
+	if err != nil {
+		return
+	}
+
 	guild, err := session.Guild(m.GuildID)
 	if err != nil {
 		_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
@@ -365,33 +369,44 @@ func handleSetwinnerCommand(s *discordgo.Session, m *discordgo.MessageCreate, ar
 
 func handleThxmeCommand(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if len(args) != 2 {
-		_, _ = s.ChannelMessageSend(m.ChannelID, "Niepoprawna ilosc argumentow")
+		_, _ = s.ChannelMessageSend(m.ChannelID, "Niepoprawna ilość argumentów.")
 		return
 	}
+
 	match, _ := regexp.Match("<@[!]?[0-9]*>", []byte(args[1]))
 	if !match {
 		printGiveawayInfo(m.ChannelID, m.GuildID)
 		return
 	}
+
 	args[1] = args[1][2 : len(args[1])-1]
+	if strings.HasPrefix(args[1], "!") {
+		args[1] = args[1][1:]
+	}
+
 	if m.Author.ID == args[1] {
-		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można poprosic o podziękowanie samego siebie!")
+		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie możesz poprosić siebie o podziękowanie.")
 		return
 	}
-	user, _ := session.User(args[1])
+
+	user, err := session.User(args[1])
+	if err != nil {
+		return
+	}
+
 	guild, err := session.Guild(m.GuildID)
 	if err != nil {
 		_, _ = session.ChannelMessageSend(m.ChannelID, "Coś poszło nie tak przy dodawaniu podziękowania :(")
 		log.Println("OnMessageCreate session.Guild(" + m.GuildID + ") " + err.Error())
 		return
 	}
-	log.Println(m.Author.Username + " podziękował " + user.Username + " na " + guild.Name)
+
 	if user.Bot {
-		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można prosic o podziękowanie bota!")
+		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie można prosić o podziękowanie bota!")
 		return
 	}
 	if isBlacklisted(m.GuildID, m.Author.ID) {
-		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie mozesz poprosic o thx, gdyż jestes na czarnej liscie!")
+		_, _ = session.ChannelMessageSend(m.ChannelID, "Nie możesz poprosić o thx, gdyż jesteś na czarnej liście!")
 		return
 	}
 	candidate := &ParticipantCandidate{

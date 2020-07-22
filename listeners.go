@@ -102,10 +102,11 @@ func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 	candidate.IsAccepted.Valid = true
 
 	if r.Emoji.Name == "✅" {
-		if candidate.IsAccepted.Valid {
+		if !candidate.IsAccepted.Valid {
 			return
 		}
 		log.Println(candidate.CandidateApproverName + "(" + candidate.CandidateApproverId + ") zaakceptował prosbe o thx uzytkownika " + candidate.CandidateName + "(" + candidate.CandidateId + ")")
+		_ = session.ChannelMessageDelete(candidate.ChannelId, candidate.MessageId)
 		candidate.IsAccepted.Bool = true
 		_, err := DbMap.Update(candidate)
 		if err != nil {
@@ -122,7 +123,7 @@ func HandleThxmeReactions(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 			GuildName:  candidate.GuildName,
 			ChannelId:  channelId,
 		}
-		participant.MessageId = *updateThxInfoMessage(nil, r.GuildID, channelId, candidate.CandidateName, participant.GiveawayId, nil, wait)
+		participant.MessageId = *updateThxInfoMessage(nil, r.GuildID, channelId, candidate.CandidateId, participant.GiveawayId, nil, wait)
 		err = DbMap.Insert(participant)
 		if err != nil {
 			_, _ = session.ChannelMessageSend(channelId, "Coś poszło nie tak przy dodawaniu podziękowania :(")
