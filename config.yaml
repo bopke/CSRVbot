@@ -1,0 +1,3 @@
+mysql_string: "login:password@tcp(adres_bazy:port_polaczenia)/nazwa_bazy?parseTime=true"
+system_token: "token bota"
+csrv_secret: "secret api od kodow"
